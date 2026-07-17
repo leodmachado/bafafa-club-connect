@@ -1,0 +1,6 @@
+# O proprietário revisa alterações sensíveis antes do merge.
+* @leodmachado
+/.github/ @leodmachado
+/supabase/ @leodmachado
+/src/integrations/ @leodmachado
+/vercel.json @leodmachado

@@ -1,0 +1,43 @@
+BAFAFÁ CONNECT — ATUALIZAÇÃO V19.3
+=================================
+
+O QUE MUDA
+----------
+1. Eventos publicados mudam automaticamente conforme data e hora:
+   - antes do início: AGENDADO;
+   - entre início e fim: ROLANDO AGORA;
+   - após o fim: ENCERRADO.
+
+2. O feed também calcula o status pela data, evitando que evento passado continue em destaque.
+
+3. Missões por quantidade de check-ins passam a contar, por padrão, os mesmos check-ins exibidos no perfil.
+
+4. As missões antigas ativas deixam de exigir silenciosamente confirmação da equipe e 40% de perfil.
+
+5. Ao criar ou confirmar um check-in, os marcos são recalculados automaticamente.
+
+COMO INSTALAR
+-------------
+1. Substitua os arquivos do pacote no repositório.
+2. No Supabase, abra SQL Editor.
+3. Execute o arquivo:
+   docs/BAFAFA_EVENTOS_MARCOS_V193_SETUP.sql
+4. Faça o deploy da aplicação.
+5. Entre no app e atualize o feed ou a tela Fofoquinhas.
+
+TESTE SUGERIDO
+--------------
+- Crie um evento com início alguns minutos no futuro e publique.
+- Confirme que aparece como Agendado.
+- Altere o início para alguns minutos no passado e o fim para o futuro.
+- Atualize a tela: deve aparecer como Rolando agora.
+- Altere o fim para o passado: deve aparecer como Encerrado e sair do destaque do feed.
+
+- Crie uma missão "3 check-ins".
+- Deixe desligada a opção "Contar somente presenças confirmadas pela equipe".
+- Um perfil com 3 check-ins deve mostrar 3 de 3 e receber a Fofoquinha.
+
+OBSERVAÇÃO
+----------
+O status é sincronizado quando o app, o painel administrativo ou a tela operacional são abertos.
+Além disso, qualquer edição do evento já salva o status correto imediatamente.

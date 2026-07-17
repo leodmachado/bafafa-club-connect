@@ -1,0 +1,13 @@
+V11 — BLOCO 3
+
+Nova aba do painel: Gestão e piloto.
+
+Esta versão acrescenta:
+- métricas e funil;
+- comparação por evento;
+- qualidade e preferências dos perfis;
+- exportação CSV auditada;
+- configuração e checklist do piloto;
+- metas de cadastros, check-ins e resgates.
+
+Execute primeiro o SQL BAFAFA_GESTAO_V11_BLOCO3_SETUP.sql.

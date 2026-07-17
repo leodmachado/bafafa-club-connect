@@ -11,8 +11,9 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportClientError } from "../lib/client-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
+import { markPasswordRecovery } from "@/lib/auth-security";
 
 function NotFoundComponent() {
   return (
@@ -37,10 +38,9 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportClientError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -52,7 +52,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-festa hover:opacity-90"
           >
             Tentar de novo
@@ -78,24 +81,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Clube oficial do Bafafá Bar em Natal/RN. Fofoquinhas, reservas, benefícios e sua carteirinha digital.",
+          "Clube oficial do Bafafá Bar em Natal/RN. Check-in em eventos, mimos, selos e títulos.",
       },
-      { name: "theme-color", content: "#2f9d5a" },
+      { name: "theme-color", content: "#fff8e9" },
+      { name: "robots", content: "noindex,nofollow,noarchive,nosnippet" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Bafafá" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { property: "og:title", content: "BAFAFÁ — Clube dos Bafafãs" },
       {
         property: "og:description",
-        content: "Clube oficial do Bafafá Bar em Natal/RN. Fofoquinhas, reservas, benefícios e sua carteirinha digital.",
+        content:
+          "Clube oficial do Bafafá Bar em Natal/RN. Check-in em eventos, mimos, selos e títulos.",
       },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "pt_BR" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "BAFAFÁ — Clube dos Bafafãs" },
-      { name: "twitter:description", content: "Clube oficial do Bafafá Bar em Natal/RN. Fofoquinhas, reservas, benefícios e sua carteirinha digital." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01afe14d-60a8-4c89-a25d-d73b68c8bcbe/id-preview-d9f14873--178dd466-fa9b-4dae-be6c-a7580f79db65.lovable.app-1784030711664.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/01afe14d-60a8-4c89-a25d-d73b68c8bcbe/id-preview-d9f14873--178dd466-fa9b-4dae-be6c-a7580f79db65.lovable.app-1784030711664.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Clube oficial do Bafafá Bar em Natal/RN. Check-in em eventos, mimos, selos e títulos.",
+      },
+      {
+        property: "og:image",
+        content: "/brand/logo-bafafa.png",
+      },
+      {
+        name: "twitter:image",
+        content: "/brand/logo-bafafa.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -106,7 +121,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800;9..144,900&family=Nunito:wght@400;600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=Nunito+Sans:wght@400;600;700;800;900&display=swap",
       },
     ],
   }),
@@ -135,8 +150,16 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session?.user) {
+        markPasswordRecovery(session.user.id);
+      }
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED" ||
+        event === "MFA_CHALLENGE_VERIFIED"
+      ) {
         router.invalidate();
         if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
       }

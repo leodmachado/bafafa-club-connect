@@ -5,24 +5,25 @@
 @custom-variant dark (&:is(.dark *));
 
 /* =====================================================================
- * BAFAFÁ — Clube dos Bafafãs :: Design System
+ * BAFAFÁ — Clube dos Bafafãs :: Identidade visual 2026
  * ---------------------------------------------------------------------
- * Fundos claros/creme com destaques fortes de verde, laranja, rosa,
- * azul e amarelo. Tipografia com personalidade: Fraunces (display) +
- * Nunito (corpo). Cantos arredondados, sombras suaves, cara de festa.
- * As fontes são carregadas via <link> em src/routes/__root.tsx.
+ * A interface combina a logo de recortes, cartazes de pagode, stickers,
+ * a parede de tijolinhos e a praça em frente ao bar. A base continua
+ * clara e legível; as cores entram em blocos fortes, sem virar carnaval
+ * visual em todas as telas.
  * ===================================================================== */
 
 @theme inline {
-  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Fraunces", "Nunito", ui-serif, Georgia, serif;
+  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bebas Neue", "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-poster: "Archivo Black", "Nunito Sans", ui-sans-serif, sans-serif;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 5px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
-  --radius-2xl: calc(var(--radius) + 12px);
-  --radius-3xl: calc(var(--radius) + 20px);
+  --radius-xl: calc(var(--radius) + 5px);
+  --radius-2xl: calc(var(--radius) + 10px);
+  --radius-3xl: calc(var(--radius) + 18px);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -46,6 +47,13 @@
   --color-mango-foreground: var(--mango-foreground);
   --color-lagoa: var(--lagoa);
   --color-lagoa-foreground: var(--lagoa-foreground);
+  --color-electric: var(--electric);
+  --color-electric-foreground: var(--electric-foreground);
+  --color-brick: var(--brick);
+  --color-brick-foreground: var(--brick-foreground);
+  --color-mint: var(--mint);
+  --color-mint-foreground: var(--mint-foreground);
+  --color-cream: var(--cream);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -68,148 +76,864 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-festa: 0 10px 30px -12px color-mix(in oklab, var(--primary) 35%, transparent);
-  --shadow-card: 0 4px 20px -8px color-mix(in oklab, var(--foreground) 18%, transparent);
+  --shadow-festa: 4px 5px 0 var(--foreground);
+  --shadow-card: 0 12px 28px -20px color-mix(in srgb, var(--foreground) 45%, transparent);
+  --shadow-soft: 0 16px 40px -24px color-mix(in srgb, var(--foreground) 38%, transparent);
 }
 
 :root {
   --radius: 1rem;
 
-  /* Fundo creme, textos em azul-noite */
-  --background: oklch(0.985 0.015 90);          /* creme suave */
-  --foreground: oklch(0.20 0.04 260);           /* azul muito escuro */
-  --surface: oklch(1 0 0);
-  --surface-foreground: oklch(0.20 0.04 260);
+  --background: #fff8e9;
+  --foreground: #16122b;
+  --cream: #fff8e9;
+  --surface: #fffdf6;
+  --surface-foreground: #16122b;
+  --card: #fffdf6;
+  --card-foreground: #16122b;
+  --popover: #fffdf6;
+  --popover-foreground: #16122b;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.04 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.04 260);
+  --primary: #36b84a;
+  --primary-foreground: #ffffff;
+  --secondary: #ff7a00;
+  --secondary-foreground: #16122b;
+  --accent: #ff3b30;
+  --accent-foreground: #ffffff;
+  --samba: #f42f91;
+  --samba-foreground: #ffffff;
+  --mango: #ffd126;
+  --mango-foreground: #16122b;
+  --lagoa: #08c7b5;
+  --lagoa-foreground: #16122b;
+  --electric: #2569d8;
+  --electric-foreground: #ffffff;
+  --brick: #ed4c17;
+  --brick-foreground: #ffffff;
+  --mint: #7fdc52;
+  --mint-foreground: #16122b;
 
-  /* Verde bafafá — cor primária (samba/festa) */
-  --primary: oklch(0.65 0.16 152);
-  --primary-foreground: oklch(0.985 0.02 90);
+  /* Cores semânticas do produto. O significado continua igual em todas as telas. */
+  --content-news: #ff7a00;
+  --content-news-light: #ffa43d;
+  --content-promotion: #ffd126;
+  --content-promotion-light: #ffe06c;
+  --content-mission: #08c7b5;
+  --content-mission-light: #62e0d4;
+  --content-chat: #2c1b4a;
+  --content-chat-light: #6545a0;
+  --content-profile: #2569d8;
+  --content-profile-light: #6e9fe8;
+  --content-checkin: #36b84a;
+  --content-checkin-light: #77d783;
 
-  /* Laranja quente — secundária */
-  --secondary: oklch(0.72 0.19 55);
-  --secondary-foreground: oklch(0.15 0.03 260);
+  --muted: #f3ead7;
+  --muted-foreground: #675f70;
+  --destructive: #d81e35;
+  --destructive-foreground: #ffffff;
+  --border: #dfd4bf;
+  --input: #dfd4bf;
+  --ring: #2569d8;
 
-  /* Rosa pagode — reserved for accent */
-  --accent: oklch(0.72 0.19 12);
-  --accent-foreground: oklch(0.985 0.02 90);
+  --chart-1: #36b84a;
+  --chart-2: #ff7a00;
+  --chart-3: #f42f91;
+  --chart-4: #2569d8;
+  --chart-5: #ffd126;
 
-  /* Cores extras nomeadas na identidade */
-  --samba: oklch(0.72 0.19 12);        /* rosa */
-  --samba-foreground: oklch(0.985 0.02 90);
-  --mango: oklch(0.88 0.16 92);        /* amarelo manga */
-  --mango-foreground: oklch(0.20 0.04 260);
-  --lagoa: oklch(0.60 0.15 235);       /* azul lagoa */
-  --lagoa-foreground: oklch(0.985 0.02 90);
-
-  --muted: oklch(0.95 0.02 90);
-  --muted-foreground: oklch(0.45 0.03 260);
-
-  --destructive: oklch(0.58 0.24 27);
-  --destructive-foreground: oklch(0.985 0.02 90);
-
-  --border: oklch(0.90 0.02 90);
-  --input: oklch(0.94 0.02 90);
-  --ring: oklch(0.65 0.16 152);
-
-  --chart-1: oklch(0.65 0.16 152);
-  --chart-2: oklch(0.72 0.19 55);
-  --chart-3: oklch(0.72 0.19 12);
-  --chart-4: oklch(0.60 0.15 235);
-  --chart-5: oklch(0.88 0.16 92);
-
-  --sidebar: oklch(0.985 0.015 90);
-  --sidebar-foreground: oklch(0.20 0.04 260);
-  --sidebar-primary: oklch(0.65 0.16 152);
-  --sidebar-primary-foreground: oklch(0.985 0.02 90);
-  --sidebar-accent: oklch(0.95 0.02 90);
-  --sidebar-accent-foreground: oklch(0.20 0.04 260);
-  --sidebar-border: oklch(0.90 0.02 90);
-  --sidebar-ring: oklch(0.65 0.16 152);
+  --sidebar: #fff8e9;
+  --sidebar-foreground: #16122b;
+  --sidebar-primary: #36b84a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3ead7;
+  --sidebar-accent-foreground: #16122b;
+  --sidebar-border: #dfd4bf;
+  --sidebar-ring: #2569d8;
 }
 
 .dark {
-  --background: oklch(0.16 0.03 260);
-  --foreground: oklch(0.97 0.02 90);
-  --surface: oklch(0.22 0.03 260);
-  --surface-foreground: oklch(0.97 0.02 90);
-  --card: oklch(0.22 0.03 260);
-  --card-foreground: oklch(0.97 0.02 90);
-  --popover: oklch(0.22 0.03 260);
-  --popover-foreground: oklch(0.97 0.02 90);
-  --primary: oklch(0.75 0.16 152);
-  --primary-foreground: oklch(0.15 0.03 260);
-  --secondary: oklch(0.75 0.19 55);
-  --secondary-foreground: oklch(0.15 0.03 260);
-  --accent: oklch(0.78 0.18 12);
-  --accent-foreground: oklch(0.15 0.03 260);
-  --samba: oklch(0.78 0.18 12);
-  --samba-foreground: oklch(0.15 0.03 260);
-  --mango: oklch(0.88 0.16 92);
-  --mango-foreground: oklch(0.15 0.03 260);
-  --lagoa: oklch(0.70 0.15 235);
-  --lagoa-foreground: oklch(0.15 0.03 260);
-  --muted: oklch(0.28 0.03 260);
-  --muted-foreground: oklch(0.72 0.03 260);
-  --destructive: oklch(0.70 0.19 22);
-  --destructive-foreground: oklch(0.97 0.02 90);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.16 152);
-  --sidebar: oklch(0.22 0.03 260);
-  --sidebar-foreground: oklch(0.97 0.02 90);
-  --sidebar-primary: oklch(0.75 0.16 152);
-  --sidebar-primary-foreground: oklch(0.15 0.03 260);
-  --sidebar-accent: oklch(0.28 0.03 260);
-  --sidebar-accent-foreground: oklch(0.97 0.02 90);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.75 0.16 152);
+  --background: #111018;
+  --foreground: #fff8e9;
+  --surface: #1d1b26;
+  --surface-foreground: #fff8e9;
+  --card: #1d1b26;
+  --card-foreground: #fff8e9;
+  --popover: #1d1b26;
+  --popover-foreground: #fff8e9;
+  --muted: #292633;
+  --muted-foreground: #c5bbc9;
+  --border: #3a3543;
+  --input: #3a3543;
+  --cream: #fff8e9;
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  html, body { -webkit-font-smoothing: antialiased; }
+  * {
+    border-color: var(--color-border);
+  }
+  html,
   body {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    overflow-x: hidden;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01","cv02";
+    font-feature-settings: "ss01", "cv02";
+    min-width: 320px;
   }
-  h1, h2, h3, .font-display {
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-weight: 400;
+    letter-spacing: 0.015em;
+    text-transform: uppercase;
+  }
+  .font-poster {
+    font-family: var(--font-poster);
+    font-weight: 900;
+    letter-spacing: -0.035em;
+  }
+}
+
+@layer components {
+  .app-canvas {
+    background-color: var(--background);
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--foreground) 3%, transparent) 1px,
+        transparent 1px
+      );
+    background-size: 34px 34px;
+  }
+
+  .card-festa {
+    background: var(--color-card);
+    border: 2px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-card);
+  }
+
+  .sticker-card {
+    position: relative;
+    border: 2px solid var(--foreground);
+    border-radius: 1.45rem;
+    box-shadow: 4px 5px 0 var(--foreground);
+  }
+
+  .poster-card {
+    position: relative;
+    overflow: hidden;
+    border: 3px solid var(--foreground);
+    border-radius: 1.6rem;
+    box-shadow: 5px 6px 0 var(--foreground);
+  }
+
+  .ticket-card {
+    position: relative;
+    overflow: hidden;
+    border: 2px dashed color-mix(in srgb, var(--foreground) 65%, transparent);
+    border-radius: 1.35rem;
+    box-shadow: 4px 5px 0 var(--foreground);
+  }
+  .ticket-card::before,
+  .ticket-card::after {
+    content: "";
+    position: absolute;
+    top: 48%;
+    z-index: 2;
+    width: 1.35rem;
+    height: 1.35rem;
+    border: 2px solid var(--foreground);
+    border-radius: 999px;
+    background: var(--background);
+    transform: translateY(-50%);
+  }
+  .ticket-card::before {
+    left: -0.75rem;
+  }
+  .ticket-card::after {
+    right: -0.75rem;
+  }
+
+  .brick-texture {
+    background-color: var(--brick);
+    background-image:
+      linear-gradient(90deg, color-mix(in srgb, #fff 16%, transparent) 2px, transparent 2px),
+      linear-gradient(color-mix(in srgb, #fff 16%, transparent) 2px, transparent 2px),
+      linear-gradient(90deg, transparent 50%, color-mix(in srgb, #fff 12%, transparent) 50%);
+    background-size:
+      74px 34px,
+      74px 34px,
+      148px 68px;
+  }
+
+  .checker-texture {
+    background-color: var(--mango);
+    background-image:
+      linear-gradient(
+        45deg,
+        color-mix(in srgb, var(--secondary) 32%, transparent) 25%,
+        transparent 25%,
+        transparent 75%,
+        color-mix(in srgb, var(--secondary) 32%, transparent) 75%
+      ),
+      linear-gradient(
+        45deg,
+        color-mix(in srgb, var(--secondary) 32%, transparent) 25%,
+        transparent 25%,
+        transparent 75%,
+        color-mix(in srgb, var(--secondary) 32%, transparent) 75%
+      );
+    background-position:
+      0 0,
+      22px 22px;
+    background-size: 44px 44px;
+  }
+
+  .grid-texture {
+    background-image:
+      linear-gradient(color-mix(in srgb, currentColor 11%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, currentColor 11%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .cut-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 2px solid var(--foreground);
+    border-radius: 0.45rem;
+    padding: 0.25rem 0.65rem;
+    font-family: var(--font-poster);
+    font-size: 0.68rem;
+    line-height: 1;
+    text-transform: uppercase;
+    box-shadow: 2px 3px 0 var(--foreground);
+    transform: rotate(-1.5deg);
+  }
+
+  .poster-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 11vw, 4.25rem);
+    line-height: 0.86;
+    letter-spacing: 0.015em;
+    text-transform: uppercase;
+  }
+
+  .section-kicker {
+    font-family: var(--font-poster);
+    font-size: 0.65rem;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .plaza-line {
+    height: 18px;
+    opacity: 0.32;
+    background: radial-gradient(
+        ellipse at 12% 100%,
+        transparent 0 43%,
+        currentColor 44% 49%,
+        transparent 50%
+      )
+      0 100% / 62px 18px repeat-x;
+  }
+
+  .content-card {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid var(--foreground);
+    border-radius: 1.55rem;
+    box-shadow: 4px 5px 0 var(--foreground);
+  }
+
+  .content-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.62;
+  }
+
+  .content-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .content-card--news {
+    background-color: var(--content-news);
+    color: var(--foreground);
+  }
+
+  .content-card--news::before {
+    background-image:
+      linear-gradient(45deg, var(--content-news-light) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--content-news-light) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--content-news-light) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--content-news-light) 75%);
+    background-position:
+      0 0,
+      0 18px,
+      18px -18px,
+      -18px 0;
+    background-size: 36px 36px;
+  }
+
+  .content-card--promotion {
+    background-color: var(--content-promotion);
+  }
+
+  .content-card--promotion::before {
+    background-image:
+      linear-gradient(45deg, var(--content-promotion-light) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--content-promotion-light) 75%);
+    background-position:
+      0 0,
+      20px 20px;
+    background-size: 40px 40px;
+  }
+
+  .content-card--mission {
+    background-color: var(--content-mission);
+  }
+
+  .content-card--mission::before {
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--content-mission-light) 75%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--content-mission-light) 75%, transparent) 1px,
+        transparent 1px
+      ),
+      radial-gradient(circle at 24px 24px, var(--content-mission-light) 0 4px, transparent 4.5px);
+    background-size:
+      28px 28px,
+      28px 28px,
+      56px 56px;
+  }
+
+  .content-card--chat {
+    background:
+      radial-gradient(
+        circle at 88% 15%,
+        color-mix(in srgb, var(--samba) 75%, transparent) 0 4px,
+        transparent 5px
+      ),
+      radial-gradient(
+        circle at 12% 82%,
+        color-mix(in srgb, var(--mango) 75%, transparent) 0 4px,
+        transparent 5px
+      ),
+      linear-gradient(145deg, var(--content-chat-light), var(--content-chat) 58%);
+  }
+
+  .content-card--chat::before {
+    background-image:
+      radial-gradient(circle, color-mix(in srgb, white 18%, transparent) 0 1px, transparent 1.5px),
+      linear-gradient(120deg, color-mix(in srgb, var(--samba) 24%, transparent), transparent 48%);
+    background-size:
+      20px 20px,
+      100% 100%;
+  }
+
+  .content-card--profile {
+    background: linear-gradient(145deg, var(--content-profile-light), var(--content-profile) 72%);
+  }
+
+  .content-card--profile::before {
+    background-image:
+      repeating-linear-gradient(
+        135deg,
+        color-mix(in srgb, white 17%, transparent) 0 8px,
+        transparent 8px 22px
+      ),
+      linear-gradient(color-mix(in srgb, white 10%, transparent) 1px, transparent 1px);
+    background-size:
+      auto,
+      100% 24px;
+  }
+
+  .content-card--checkin {
+    background: linear-gradient(145deg, var(--content-checkin-light), var(--content-checkin) 66%);
+  }
+
+  .content-card--checkin::before {
+    background-image:
+      linear-gradient(color-mix(in srgb, white 17%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, white 17%, transparent) 1px, transparent 1px);
+    background-size: 27px 27px;
+  }
+
+  .content-card--featured {
+    border-width: 3px;
+    box-shadow: 5px 6px 0 var(--foreground);
+  }
+
+  .feed-more-link {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2px solid var(--foreground);
+    border-radius: 1rem;
+    padding: 0.8rem 1rem;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 0.82rem;
+    font-weight: 900;
+    box-shadow: 3px 4px 0 var(--foreground);
+  }
+
+  .bafafa-icon-button {
+    display: grid;
+    width: 2.55rem;
+    height: 2.55rem;
+    place-items: center;
+    border: 2px solid var(--foreground);
+    border-radius: 999px;
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 2px 3px 0 var(--foreground);
+    transition:
+      transform 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  .bafafa-icon-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0 1px 0 var(--foreground);
+  }
+
+  .bafafa-select {
+    width: 100%;
+    appearance: none;
+    border: 2px solid var(--foreground);
+    border-radius: 1rem;
+    padding: 0.78rem 2.75rem 0.78rem 1rem;
+    background-color: var(--surface);
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--foreground) 50%),
+      linear-gradient(135deg, var(--foreground) 50%, transparent 50%),
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--foreground) 15%, transparent),
+        color-mix(in srgb, var(--foreground) 15%, transparent)
+      );
+    background-position:
+      calc(100% - 20px) 52%,
+      calc(100% - 14px) 52%,
+      calc(100% - 2.75rem) 0.55rem;
+    background-size:
+      6px 6px,
+      6px 6px,
+      2px calc(100% - 1.1rem);
+    background-repeat: no-repeat;
+    font-weight: 800;
+    box-shadow: 2px 3px 0 color-mix(in srgb, var(--foreground) 22%, transparent);
+    outline: none;
+  }
+
+  .bafafa-select:focus {
+    border-color: var(--electric);
+    box-shadow:
+      2px 3px 0 var(--foreground),
+      0 0 0 4px color-mix(in srgb, var(--lagoa) 24%, transparent);
+  }
+
+  .bafafa-dialog {
+    overflow: hidden;
+    border: 2px solid var(--foreground);
+    border-radius: 1.65rem;
+    background: var(--background);
+    box-shadow: 6px 7px 0 var(--foreground);
+  }
+
+  .resenha-header {
+    background:
+      radial-gradient(circle at 86% 20%, var(--mango) 0 4px, transparent 5px),
+      radial-gradient(circle at 72% 72%, var(--samba) 0 5px, transparent 6px),
+      radial-gradient(circle at 18% 88%, var(--lagoa) 0 4px, transparent 5px),
+      linear-gradient(135deg, #6545a0, var(--content-chat) 62%);
+  }
+
+  .resenha-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.3;
+    background-image:
+      linear-gradient(color-mix(in srgb, white 17%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, white 17%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .resenha-header > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .resenha-room {
+    border: 2px solid var(--foreground);
+    border-radius: 1.65rem;
+    background: var(--card);
+    box-shadow: 5px 6px 0 var(--foreground);
+  }
+
+  .resenha-room__header {
+    border-bottom: 2px solid var(--foreground);
+    background:
+      linear-gradient(115deg, color-mix(in srgb, var(--samba) 38%, transparent), transparent 50%),
+      var(--content-chat);
+  }
+
+  .resenha-room__feed {
+    background-color: #fff5df;
+    background-image:
+      radial-gradient(
+        circle at 20% 22%,
+        color-mix(in srgb, var(--samba) 8%, transparent) 0 12%,
+        transparent 13%
+      ),
+      radial-gradient(
+        circle at 82% 76%,
+        color-mix(in srgb, var(--lagoa) 8%, transparent) 0 10%,
+        transparent 11%
+      ),
+      linear-gradient(color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--foreground) 3%, transparent) 1px,
+        transparent 1px
+      );
+    background-size:
+      220px 220px,
+      260px 260px,
+      28px 28px,
+      28px 28px;
+  }
+
+  .resenha-bubble {
+    border: 2px solid var(--foreground);
+    border-radius: 1.15rem;
+    box-shadow: 2px 3px 0 color-mix(in srgb, var(--foreground) 32%, transparent);
+  }
+
+  .resenha-bubble--other {
+    border-bottom-left-radius: 0.35rem;
+    background: var(--card);
+  }
+
+  .resenha-bubble--mine {
+    border-bottom-right-radius: 0.35rem;
+    background: color-mix(in srgb, var(--lagoa) 32%, white);
+  }
+
+  .resenha-composer {
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--mango) 18%, transparent), transparent 40%),
+      var(--card);
+  }
+
+  .profile-card__stripe {
+    background:
+      repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0 8px, transparent 8px 22px),
+      linear-gradient(
+        90deg,
+        var(--mango) 0 24%,
+        var(--samba) 24% 49%,
+        var(--lagoa) 49% 74%,
+        var(--brick) 74% 100%
+      );
+  }
+
+  .profile-form {
+    border-top: 0.7rem solid var(--content-profile);
+  }
+
+  .profile-subpanel {
+    border: 2px solid var(--foreground);
+    border-radius: 1.35rem;
+    box-shadow: 3px 4px 0 color-mix(in srgb, var(--foreground) 20%, transparent);
+  }
+
+  .profile-subpanel--identity {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--lagoa) 17%, white), white 68%);
+  }
+
+  .profile-subpanel--privacy {
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--content-profile) 12%, white),
+      white 72%
+    );
   }
 }
 
 @utility wordmark {
-  font-family: var(--font-display);
+  font-family: var(--font-poster);
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 0.9;
 }
 
-@utility card-festa {
-  background: var(--color-card);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-card);
-}
-
 @utility bg-confete {
   background-image:
-    radial-gradient(circle at 12% 18%, color-mix(in oklab, var(--samba) 60%, transparent) 0 3px, transparent 4px),
-    radial-gradient(circle at 78% 34%, color-mix(in oklab, var(--secondary) 60%, transparent) 0 3px, transparent 4px),
-    radial-gradient(circle at 40% 78%, color-mix(in oklab, var(--primary) 60%, transparent) 0 3px, transparent 4px),
-    radial-gradient(circle at 88% 82%, color-mix(in oklab, var(--mango) 70%, transparent) 0 3px, transparent 4px),
-    radial-gradient(circle at 22% 62%, color-mix(in oklab, var(--lagoa) 60%, transparent) 0 3px, transparent 4px);
+    radial-gradient(
+      circle at 12% 18%,
+      color-mix(in srgb, var(--samba) 75%, transparent) 0 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 78% 34%,
+      color-mix(in srgb, var(--secondary) 75%, transparent) 0 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 40% 78%,
+      color-mix(in srgb, var(--primary) 75%, transparent) 0 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 88% 82%,
+      color-mix(in srgb, var(--mango) 88%, transparent) 0 3px,
+      transparent 4px
+    ),
+    radial-gradient(
+      circle at 22% 62%,
+      color-mix(in srgb, var(--electric) 75%, transparent) 0 3px,
+      transparent 4px
+    );
   background-size: 220px 220px;
 }
 
-/* Safe area bottom padding for iOS PWA */
 @utility pb-safe {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+/* Hero refinado da home -------------------------------------------------- */
+@layer components {
+  .home-hero {
+    isolation: isolate;
+    background:
+      linear-gradient(120deg, color-mix(in srgb, var(--samba) 8%, transparent), transparent 46%),
+      linear-gradient(300deg, color-mix(in srgb, var(--mango) 22%, transparent), transparent 52%);
+  }
+
+  .home-hero__sun {
+    position: absolute;
+    right: -3.5rem;
+    top: -4.5rem;
+    width: 12rem;
+    height: 12rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mango) 58%, transparent);
+    filter: blur(1px);
+    opacity: 0.66;
+  }
+
+  .bafafa-sign {
+    position: relative;
+    display: flex;
+    width: min(9.4rem, 33vw);
+    min-height: 4.8rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.72rem 0.9rem 0.62rem;
+    overflow: visible;
+    border: 2px solid var(--foreground);
+    border-radius: 1.15rem 0.95rem 1.25rem 0.9rem;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 233, 0.96)),
+      repeating-linear-gradient(0deg, transparent 0 11px, rgba(22, 18, 43, 0.035) 12px 13px);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.96),
+      inset 0 -4px 0 rgba(237, 76, 23, 0.12),
+      3px 4px 0 var(--foreground),
+      7px 8px 0 var(--brick);
+    transform: rotate(-1.25deg);
+  }
+
+  .bafafa-sign::after {
+    content: "";
+    position: absolute;
+    inset: 0.36rem;
+    z-index: 0;
+    pointer-events: none;
+    border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+    border-radius: 0.8rem 0.65rem 0.9rem 0.7rem;
+  }
+
+  .bafafa-sign__nail {
+    position: absolute;
+    top: 0.42rem;
+    z-index: 2;
+    width: 0.36rem;
+    height: 0.36rem;
+    border: 1px solid color-mix(in srgb, var(--foreground) 70%, transparent);
+    border-radius: 999px;
+    background: var(--mango);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      1px 1px 0 var(--foreground);
+  }
+
+  .bafafa-sign__nail--left {
+    left: 0.62rem;
+  }
+  .bafafa-sign__nail--right {
+    right: 0.62rem;
+  }
+
+  .home-hero__institutional {
+    margin-top: 1.15rem;
+    padding-left: 0.1rem;
+    font-family: var(--font-poster);
+    font-size: 0.63rem;
+    line-height: 1.3;
+    letter-spacing: 0.17em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .home-hero__official-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.15rem;
+    border: 2px solid var(--foreground);
+    border-radius: 0.55rem;
+    padding: 0.27rem 0.55rem;
+    background: var(--lagoa);
+    color: var(--foreground);
+    font-family: var(--font-poster);
+    font-size: 0.59rem;
+    line-height: 1;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+    box-shadow: 2px 3px 0 var(--foreground);
+    transform: rotate(-1deg);
+    white-space: nowrap;
+  }
+
+  .home-hero__invitation {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    border: 2px solid var(--foreground);
+    border-radius: 0.65rem;
+    padding: 0.38rem 0.72rem 0.32rem;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-poster);
+    font-size: 0.66rem;
+    line-height: 1.05;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: 2px 3px 0 var(--foreground);
+    transform: rotate(-1deg);
+    white-space: normal;
+  }
+
+  .home-hero__copy {
+    max-width: 100%;
+    padding-left: 0.95rem;
+    border-left: 3px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  }
+
+  .home-hero__greeting {
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 0.08em;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 13vw, 4.8rem);
+    line-height: 0.83;
+    letter-spacing: 0.012em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .home-hero__greeting > span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .home-hero__asterisk {
+    display: inline-block;
+    margin-top: -0.05em;
+    color: var(--samba);
+    font-size: 0.66em;
+    line-height: 1;
+    transform: rotate(8deg);
+  }
+
+  .home-hero__location {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    max-width: 26rem;
+    font-size: 0.77rem;
+    font-weight: 800;
+    line-height: 1.35;
+    color: var(--muted-foreground);
+  }
+
+  @media (max-width: 370px) {
+    .bafafa-sign {
+      width: min(7.65rem, 34vw);
+      min-height: 4.2rem;
+      padding: 0.62rem 0.75rem 0.55rem;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.96),
+        inset 0 -3px 0 rgba(237, 76, 23, 0.12),
+        3px 4px 0 var(--foreground),
+        6px 7px 0 var(--brick);
+    }
+
+    .home-hero__institutional {
+      margin-top: 1rem;
+      max-width: 12rem;
+      font-size: 0.55rem;
+      letter-spacing: 0.13em;
+    }
+
+    .home-hero__official-badge {
+      padding: 0.24rem 0.45rem;
+      font-size: 0.52rem;
+    }
+
+    .home-hero__copy {
+      margin-top: 1.65rem;
+      padding-left: 0.72rem;
+    }
+    .home-hero__invitation {
+      font-size: 0.56rem;
+      letter-spacing: 0.09em;
+    }
+    .home-hero__greeting {
+      font-size: clamp(2.55rem, 13vw, 3.65rem);
+    }
+  }
 }

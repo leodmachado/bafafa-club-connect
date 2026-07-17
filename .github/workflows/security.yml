@@ -1,0 +1,49 @@
+name: Build e segurança
+
+on:
+  pull_request:
+  push:
+    branches: [main, mvp-checkin-v1]
+  schedule:
+    - cron: "20 12 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Procurar segredos no repositório
+        run: node scripts/check-repository-secrets.mjs
+
+      - name: Instalar dependências
+        shell: bash
+        run: |
+          if [ -f bun.lock ]; then
+            bun install --frozen-lockfile
+          else
+            bun install
+          fi
+
+      - name: Verificar lint
+        run: bun run lint
+
+      - name: Compilar a aplicação
+        run: bun run build
+
+      - name: Auditar dependências de produção
+        run: bun audit --prod --audit-level=high

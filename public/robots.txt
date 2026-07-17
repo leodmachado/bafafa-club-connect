@@ -1,2 +1,3 @@
+# Aplicação em piloto privado. Remover o bloqueio somente no lançamento público.
 User-agent: *
-Allow: /
+Disallow: /

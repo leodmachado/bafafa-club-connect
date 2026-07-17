@@ -1,0 +1,58 @@
+BAFAFÁ V19.2 — CHECK-IN, QR E CADASTRO DE TESTE
+================================================
+
+O QUE FOI CORRIGIDO
+-------------------
+1. O navegador agora aguarda várias leituras e usa a posição mais precisa.
+2. A tela mostra a precisão atual enquanto tenta melhorar o sinal.
+3. O banco aceita uma precisão mais realista de até 250 m nos eventos já configurados.
+4. O raio considera uma tolerância limitada baseada na precisão do aparelho.
+5. O QR alternativo não derruba mais o aplicativo.
+6. O QR agora recebe código, validade e contagem regressiva corretamente.
+7. A mesma correção foi aplicada ao QR das Fofoquinhas.
+8. Com "Confirm email" desligado no Supabase, o novo cadastro entra direto no app.
+
+PASSO 1 — SUBSTITUIR OS ARQUIVOS
+--------------------------------
+Extraia o ZIP na raiz do repositório, mantendo a estrutura das pastas, e aceite
+substituir os arquivos existentes.
+
+PASSO 2 — ATUALIZAR O BANCO
+---------------------------
+No Supabase, abra SQL Editor > New query e execute todo o conteúdo de:
+
+docs/BAFAFA_CHECKIN_CONFIAVEL_V192_SETUP.sql
+
+Depois, opcionalmente, execute:
+
+docs/VERIFICAR_CHECKIN_V192.sql
+
+PASSO 3 — DESLIGAR A CONFIRMAÇÃO DE E-MAIL DURANTE OS TESTES
+------------------------------------------------------------
+No projeto hospedado do Supabase:
+Authentication > Providers > Email > desative "Confirm email" e salve.
+
+IMPORTANTE: o arquivo supabase/config.toml deixa a confirmação desligada apenas
+no ambiente local do Supabase. A configuração do projeto hospedado precisa ser
+alterada no painel.
+
+PASSO 4 — ENVIAR AO GITHUB E FAZER O PREVIEW
+---------------------------------------------
+No PowerShell, dentro do projeto:
+
+git add .
+git commit -m "Corrige check-in GPS, QR alternativo e cadastro de teste"
+git push origin main
+
+Para fazer o preview diretamente pela pasta local usando Bun:
+
+& "$env:USERPROFILE\.bun\bin\bun.exe" install
+& "$env:USERPROFILE\.bun\bin\bun.exe" run build
+& "$env:USERPROFILE\.bun\bin\bun.exe" x vercel@latest deploy --force --logs
+
+TESTE RECOMENDADO
+-----------------
+- Teste o GPS em um celular, com localização precisa ativada.
+- No iPhone/Safari ou Android/Chrome, permita localização para o domínio preview.
+- Se o GPS continuar sem precisão, o QR alternativo deve abrir sem tela de erro.
+- O QR expira em dois minutos e pode ser gerado novamente.
