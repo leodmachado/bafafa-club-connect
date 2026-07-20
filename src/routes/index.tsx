@@ -23,8 +23,8 @@ function LandingPage() {
             Chega mais, <span className="text-mango">Bafafã</span>.
           </h1>
           <p className="mt-4 max-w-sm text-base text-primary-foreground/90">
-            Veja as promoções, encontre o evento e confirme sua presença pelo celular. Quanto mais
-            você volta ao Bafafá, mais Fofoquinhas, selos e títulos aparecem na sua carteirinha.
+            Veja o BAFAFEED, descubra Fofoquinhas e confirme sua presença pelo celular. Quanto mais
+            você volta ao Bafafá, mais missões, selos e títulos aparecem na sua carteirinha.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -46,14 +46,14 @@ function LandingPage() {
       </section>
 
       <section className="space-y-3 px-5 py-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-muted-foreground">
           O que rola no clube
         </p>
         {[
           {
             icon: MapPin,
             title: "Confirme que já chegou",
-            copy: "Abra o evento e faça check-in pela localização. Se o GPS falhar, a equipe valida seu QR.",
+            copy: "Quando estiver no Bafafá, faça check-in pela localização. Se o GPS falhar, a equipe valida seu QR.",
             tone: "bg-primary text-primary-foreground",
           },
           {

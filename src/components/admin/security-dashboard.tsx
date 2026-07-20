@@ -134,8 +134,8 @@ export function SecurityDashboard() {
     const { error } = await supabase.rpc("admin_set_security_control", {
       _control_key: control.control_key,
       _completed: !control.completed,
-      _evidence: evidence || null,
-      _notes: control.notes,
+      _evidence: evidence || undefined,
+      _notes: control.notes ?? undefined,
     });
     setWorking(null);
     if (error) return toast.error(publicErrorMessage(error));
@@ -149,7 +149,7 @@ export function SecurityDashboard() {
     setWorking(event.id);
     const { error } = await supabase.rpc("admin_resolve_security_event", {
       _event_id: event.id,
-      _resolution_note: note || null,
+      _resolution_note: note || undefined,
     });
     setWorking(null);
     if (error) return toast.error(publicErrorMessage(error));

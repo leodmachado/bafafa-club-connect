@@ -103,6 +103,20 @@ type UserBadgeRow = Database["public"]["Tables"]["user_badges"]["Row"];
 type ChatReportRow = Database["public"]["Tables"]["event_chat_reports"]["Row"];
 type ChatMessageRow = Database["public"]["Tables"]["event_chat_messages"]["Row"];
 type ProfileCompletionRow = { user_id: string; percentage: number; details: unknown };
+type PrivateChatReportRow = {
+  report_id: string;
+  message_id: string;
+  thread_id: string;
+  reporter_id: string;
+  reported_user_id: string;
+  reason: string;
+  details: string | null;
+  status: string;
+  created_at: string;
+  message_body: string;
+  author_name: string;
+  reporter_name: string;
+};
 
 type AdminData = {
   events: EventRow[];
@@ -122,6 +136,7 @@ type AdminData = {
   profileCompletions: ProfileCompletionRow[];
   chatReports: ChatReportRow[];
   chatMessages: ChatMessageRow[];
+  privateChatReports: PrivateChatReportRow[];
 };
 
 const EMPTY_DATA: AdminData = {
@@ -142,6 +157,7 @@ const EMPTY_DATA: AdminData = {
   profileCompletions: [],
   chatReports: [],
   chatMessages: [],
+  privateChatReports: [],
 };
 
 const NAV_ITEMS: Array<{ key: AdminSection; label: string; icon: typeof BarChart3 }> = [
@@ -192,6 +208,7 @@ export function AdminPanel({ currentUserId }: { currentUserId: string }) {
       profileCompletions,
       chatReports,
       chatMessages,
+      privateChatReports,
     ] = await Promise.all([
       supabase.from("events").select("*").order("starts_at", { ascending: false }),
       supabase.from("venues").select("*").order("name"),
@@ -232,6 +249,7 @@ export function AdminPanel({ currentUserId }: { currentUserId: string }) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(1000),
+      supabase.rpc("admin_private_chat_report_queue"),
     ]);
 
     const firstError = [
@@ -252,6 +270,7 @@ export function AdminPanel({ currentUserId }: { currentUserId: string }) {
       profileCompletions,
       chatReports,
       chatMessages,
+      privateChatReports,
     ]
       .map((result) => result.error)
       .find(Boolean);
@@ -278,6 +297,7 @@ export function AdminPanel({ currentUserId }: { currentUserId: string }) {
         profileCompletions: (profileCompletions.data ?? []) as ProfileCompletionRow[],
         chatReports: chatReports.data ?? [],
         chatMessages: chatMessages.data ?? [],
+        privateChatReports: (privateChatReports.data ?? []) as PrivateChatReportRow[],
       });
     }
 
@@ -621,7 +641,8 @@ function HouseSessionsManager({
                     <p className="section-kicker text-muted-foreground">Uso interno</p>
                     <h3 className="mt-1 font-display text-2xl leading-none">{session.name}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      {formatDateTime(session.starts_at)} até {formatDateTime(session.ends_at)}
+                      {formatDateTime(session.starts_at)} até{" "}
+                      {formatDateTime(session.ends_at ?? session.starts_at)}
                     </p>
                   </div>
                   <StatusPill status={status} />
@@ -3219,15 +3240,35 @@ function ChatModerationManager({ data, onChanged }: { data: AdminData; onChanged
     [data.chatMessages],
   );
   const openReports = data.chatReports.filter((report) => report.status === "open");
+  const openPrivateReports = data.privateChatReports.filter((report) => report.status === "open");
 
   async function moderate(messageId: string, restore: boolean, reason?: string) {
     const { error } = await supabase.rpc("moderate_event_chat_message", {
       _message_id: messageId,
       _restore: restore,
-      _reason: reason ?? null,
+      _reason: reason ?? undefined,
     });
     if (error) return toast.error(publicErrorMessage(error));
     toast.success(restore ? "Mensagem restaurada." : "Mensagem ocultada da Resenha.");
+    onChanged();
+  }
+
+  async function moderatePrivate(
+    reportId: string,
+    action: "remove_message" | "close_conversation" | "dismiss",
+  ) {
+    const { error } = await supabase.rpc("moderate_private_chat_report", {
+      _report_id: reportId,
+      _action: action,
+    });
+    if (error) return toast.error(publicErrorMessage(error));
+    toast.success(
+      action === "dismiss"
+        ? "Denúncia encerrada sem remover a mensagem."
+        : action === "close_conversation"
+          ? "Mensagem removida e conversa encerrada."
+          : "Mensagem privada removida.",
+    );
     onChanged();
   }
 
@@ -3343,6 +3384,74 @@ function ChatModerationManager({ data, onChanged }: { data: AdminData; onChanged
           </div>
         </section>
       </div>
+
+      <section className="card-festa mt-5 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="section-kicker text-muted-foreground">Conversa com consentimento</p>
+            <h3 className="mt-1 font-display text-2xl">Denúncias de mensagens privadas</h3>
+          </div>
+          <span className="cut-label bg-samba text-samba-foreground">
+            {openPrivateReports.length}
+          </span>
+        </div>
+        <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+          A moderação vê somente a mensagem denunciada, o motivo e as pessoas envolvidas. O restante
+          da conversa permanece privado.
+        </p>
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {openPrivateReports.length === 0 ? (
+            <div className="lg:col-span-2">
+              <EmptyMessage>Nenhuma denúncia privada aguardando análise.</EmptyMessage>
+            </div>
+          ) : (
+            openPrivateReports.map((report) => (
+              <article
+                key={report.report_id}
+                className="rounded-2xl border-2 border-foreground/15 bg-background p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-black">Mensagem de {report.author_name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Denúncia de {report.reporter_name} · {formatDateTime(report.created_at)}
+                    </p>
+                  </div>
+                  <StatusPill status={report.reason} />
+                </div>
+                <blockquote className="mt-3 rounded-xl bg-muted p-3 text-sm font-semibold">
+                  {report.message_body}
+                </blockquote>
+                {report.details && (
+                  <p className="mt-2 text-xs text-muted-foreground">{report.details}</p>
+                )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => void moderatePrivate(report.report_id, "remove_message")}
+                  >
+                    Remover mensagem
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => void moderatePrivate(report.report_id, "close_conversation")}
+                  >
+                    Encerrar conversa
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void moderatePrivate(report.report_id, "dismiss")}
+                  >
+                    Manter e encerrar
+                  </Button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
     </SectionLayout>
   );
 }

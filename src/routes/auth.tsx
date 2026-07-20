@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2, Mail, MessageCircleMore, Phone, ShieldCheck } fro
 import { TurnstileChallenge, useAuthCaptcha } from "@/components/auth/turnstile";
 import { friendlyAuthError, isPrivilegedRole, validatePassword } from "@/lib/auth-security";
 import { formatPhoneBR, normalizePhoneE164BR } from "@/lib/commercial";
+import { checkCommunityContent, NAME_MODERATION_MESSAGE } from "@/lib/content-moderation";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -35,6 +36,9 @@ const signupSchema = z
     accept_terms: z.literal(true, { errorMap: () => ({ message: "Precisa aceitar os termos." }) }),
     accept_privacy: z.literal(true, {
       errorMap: () => ({ message: "Precisa aceitar a política de privacidade." }),
+    }),
+    accept_community: z.literal(true, {
+      errorMap: () => ({ message: "Precisa aceitar as regras da comunidade." }),
     }),
     is_over_18: z.literal(true, { errorMap: () => ({ message: "Só maiores de 18 anos." }) }),
     marketing_opt_in: z.boolean().optional().default(false),
@@ -104,7 +108,7 @@ function AuthPage() {
             onClick={() => setChannel("email")}
             className={`inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 ${channel === "email" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
           >
-            <Mail className="h-4 w-4" /> E-mail de teste
+            <Mail className="h-4 w-4" /> E-mail
           </button>
         </div>
 
@@ -163,7 +167,7 @@ function PhoneSigninForm() {
     captcha.reset();
     if (error) {
       const message = error.message.toLowerCase().includes("provider")
-        ? "O acesso por telefone ainda não foi ativado no Supabase. Use o e-mail de teste por enquanto."
+        ? "O acesso por telefone está temporariamente indisponível. Use seu e-mail por enquanto."
         : friendlyAuthError(error.message);
       return toast.error(message);
     }
@@ -268,7 +272,11 @@ function PhoneSignupForm() {
     firstName: "",
     lastName: "",
     birthDate: "",
-    marketing: true,
+    acceptTerms: false,
+    acceptPrivacy: false,
+    acceptCommunity: false,
+    confirmAdult: false,
+    marketing: false,
   });
   const [loading, setLoading] = useState(false);
   const captcha = useAuthCaptcha();
@@ -283,11 +291,22 @@ function PhoneSignupForm() {
     const age = (Date.now() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
     if (!Number.isFinite(age) || age < 18)
       return toast.error("O clube é exclusivo para maiores de 18 anos.");
+    if (!formData.confirmAdult) return toast.error("Confirme que você tem 18 anos ou mais.");
+    if (!formData.acceptTerms) return toast.error("Aceite os Termos de Uso para continuar.");
+    if (!formData.acceptPrivacy)
+      return toast.error("Aceite a Política de Privacidade para continuar.");
+    if (!formData.acceptCommunity)
+      return toast.error("Aceite as regras da comunidade para continuar.");
     if (captcha.required && !captcha.token) return toast.error("Confirme o desafio de segurança.");
     setLoading(true);
     const displayName = [formData.firstName.trim(), formData.lastName.trim()]
       .filter(Boolean)
       .join(" ");
+    const moderationStatus = await checkCommunityContent(displayName, "display_name");
+    if (moderationStatus === "blocked") {
+      setLoading(false);
+      return toast.error(NAME_MODERATION_MESSAGE);
+    }
     const { error } = await supabase.auth.signInWithOtp({
       phone: normalized,
       options: {
@@ -300,12 +319,12 @@ function PhoneSignupForm() {
           phone_e164: normalized,
           whatsapp: normalized,
           birth_date: formData.birthDate,
-          is_over_18: true,
-          accept_terms: true,
-          accept_privacy: true,
-          accept_community: true,
+          is_over_18: formData.confirmAdult,
+          accept_terms: formData.acceptTerms,
+          accept_privacy: formData.acceptPrivacy,
+          accept_community: formData.acceptCommunity,
           marketing_opt_in: formData.marketing,
-          consent_version: "2.0",
+          consent_version: "2.1",
         },
       },
     });
@@ -313,7 +332,7 @@ function PhoneSignupForm() {
     captcha.reset();
     if (error) {
       const message = error.message.toLowerCase().includes("provider")
-        ? "O acesso por telefone ainda não foi ativado no Supabase. Use o e-mail de teste por enquanto."
+        ? "O acesso por telefone está temporariamente indisponível. Use seu e-mail por enquanto."
         : friendlyAuthError(error.message);
       return toast.error(message);
     }
@@ -377,7 +396,7 @@ function PhoneSignupForm() {
         autorização.
       </p>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Nome">
+        <Field label="Nome" hint="Apelidos são bem-vindos. Ofensas e discriminação ficam de fora.">
           <input
             value={formData.firstName}
             onChange={(event) =>
@@ -420,10 +439,52 @@ function PhoneSignupForm() {
         />
       </Field>
       <div className="space-y-2 rounded-2xl bg-muted p-4 text-sm">
-        <p className="font-bold">
-          Ao continuar, você confirma que tem 18 anos e aceita os Termos, a Privacidade e as regras
-          da comunidade.
-        </p>
+        <ConsentControl
+          checked={formData.confirmAdult}
+          onChange={(checked) => setFormData((current) => ({ ...current, confirmAdult: checked }))}
+          label="Confirmo que tenho 18 anos ou mais."
+        />
+        <ConsentControl
+          checked={formData.acceptTerms}
+          onChange={(checked) => setFormData((current) => ({ ...current, acceptTerms: checked }))}
+          label={
+            <>
+              Li e aceito os{" "}
+              <Link to="/privacidade" hash="termos" className="underline underline-offset-2">
+                Termos de Uso
+              </Link>
+              .
+            </>
+          }
+        />
+        <ConsentControl
+          checked={formData.acceptPrivacy}
+          onChange={(checked) => setFormData((current) => ({ ...current, acceptPrivacy: checked }))}
+          label={
+            <>
+              Li e aceito a{" "}
+              <Link to="/privacidade" hash="privacidade" className="underline underline-offset-2">
+                Política de Privacidade
+              </Link>
+              .
+            </>
+          }
+        />
+        <ConsentControl
+          checked={formData.acceptCommunity}
+          onChange={(checked) =>
+            setFormData((current) => ({ ...current, acceptCommunity: checked }))
+          }
+          label={
+            <>
+              Li e aceito as{" "}
+              <Link to="/privacidade" hash="comunidade" className="underline underline-offset-2">
+                regras da comunidade
+              </Link>
+              .
+            </>
+          }
+        />
         <label className="flex items-start gap-2">
           <input
             type="checkbox"
@@ -491,6 +552,7 @@ function SignupForm({ onDone }: { onDone: () => void }) {
       birth_date: fd.get("birth_date") as string,
       accept_terms: fd.get("accept_terms") === "on",
       accept_privacy: fd.get("accept_privacy") === "on",
+      accept_community: fd.get("accept_community") === "on",
       is_over_18: fd.get("is_over_18") === "on",
       marketing_opt_in: fd.get("marketing_opt_in") === "on",
     };
@@ -508,6 +570,12 @@ function SignupForm({ onDone }: { onDone: () => void }) {
       return;
     }
     setLoading(true);
+    const moderationStatus = await checkCommunityContent(data.display_name, "display_name");
+    if (moderationStatus === "blocked") {
+      setLoading(false);
+      setErrors({ display_name: NAME_MODERATION_MESSAGE });
+      return;
+    }
     const { data: signUp, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -518,11 +586,11 @@ function SignupForm({ onDone }: { onDone: () => void }) {
           display_name: data.display_name,
           birth_date: data.birth_date,
           is_over_18: true,
-          accept_terms: true,
-          accept_privacy: true,
-          accept_community: true,
+          accept_terms: data.accept_terms,
+          accept_privacy: data.accept_privacy,
+          accept_community: data.accept_community,
           marketing_opt_in: data.marketing_opt_in,
-          consent_version: "1.0",
+          consent_version: "2.1",
         },
       },
     });
@@ -545,18 +613,15 @@ function SignupForm({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="rounded-2xl bg-mango/40 p-4 text-sm">
-        <p className="font-bold">Versão de desenvolvimento</p>
-        <p className="mt-1 text-muted-foreground">
-          Por enquanto usamos e-mail e senha para testar sem custo de SMS. O acesso por telefone
-          entra antes do piloto com clientes reais.
-        </p>
-      </div>
       <p className="text-sm text-muted-foreground">
         Só o essencial agora. Usuário, cidade e preferências você completa depois e ganha progresso
         no perfil.
       </p>
-      <Field label="Como te chamamos?" error={errors.display_name}>
+      <Field
+        label="Como te chamamos?"
+        hint="Apelidos são bem-vindos. Ofensas e discriminação ficam de fora."
+        error={errors.display_name}
+      >
         <input
           name="display_name"
           required
@@ -578,7 +643,7 @@ function SignupForm({ onDone }: { onDone: () => void }) {
         name="password"
         show={showPassword}
         onToggle={() => setShowPassword((value) => !value)}
-        hint="Use 10+ caracteres, com letra e número."
+        hint="Use 12+ caracteres, com maiúscula, minúscula, número e símbolo."
         error={errors.password}
       />
       <PasswordField
@@ -601,13 +666,25 @@ function SignupForm({ onDone }: { onDone: () => void }) {
         <Consent
           name="accept_terms"
           error={errors.accept_terms}
-          label="Li e aceito os Termos de Uso e a Política da Comunidade."
+          label="Li e aceito os Termos de Uso."
         />
         <Consent
           name="accept_privacy"
           error={errors.accept_privacy}
           label="Li e aceito a Política de Privacidade."
         />
+        <Consent
+          name="accept_community"
+          error={errors.accept_community}
+          label="Li e aceito as regras da comunidade."
+        />
+        <p className="text-xs font-semibold text-muted-foreground">
+          Consulte os{" "}
+          <Link to="/privacidade" className="font-black underline underline-offset-2">
+            documentos do Bafafá Connect
+          </Link>
+          .
+        </p>
         <Consent
           name="marketing_opt_in"
           label="(Opcional) Quero receber promoções e novidades do Bafafá."
@@ -637,6 +714,28 @@ function Consent({ name, label, error }: { name: string; label: string; error?: 
       </label>
       {error && <span className="ml-6 block text-xs text-destructive">{error}</span>}
     </div>
+  );
+}
+
+function ConsentControl({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: React.ReactNode;
+}) {
+  return (
+    <label className="flex items-start gap-2">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-5 w-5 shrink-0 accent-primary"
+      />
+      <span>{label}</span>
+    </label>
   );
 }
 

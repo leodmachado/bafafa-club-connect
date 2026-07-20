@@ -45,6 +45,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { parseHouseSession, type HouseSession } from "@/lib/house-session";
+import { publicErrorMessage } from "@/lib/public-error";
+import { checkCommunityContent, MESSAGE_MODERATION_MESSAGE } from "@/lib/content-moderation";
 
 export const Route = createFileRoute("/_authenticated/resenha")({
   component: Resenha,
@@ -87,6 +89,7 @@ type SalveItem = {
   sender_name?: string;
   recipient_name?: string;
   thread_id?: string;
+  other_user_id: string;
 };
 
 type PrivateChatMessage = {
@@ -130,13 +133,18 @@ function Resenha() {
   const [salvesOpen, setSalvesOpen] = useState(false);
   const [salves, setSalves] = useState<SalveItem[]>([]);
   const [salvesLoading, setSalvesLoading] = useState(false);
-  const [privateThread, setPrivateThread] = useState<{ id: string; otherName: string } | null>(
-    null,
-  );
+  const [privateThread, setPrivateThread] = useState<{
+    id: string;
+    otherName: string;
+    otherUserId: string;
+  } | null>(null);
   const [privateMessages, setPrivateMessages] = useState<PrivateChatMessage[]>([]);
   const [privateDraft, setPrivateDraft] = useState("");
   const [privateLoading, setPrivateLoading] = useState(false);
   const [privateSending, setPrivateSending] = useState(false);
+  const [privateReporting, setPrivateReporting] = useState<PrivateChatMessage | null>(null);
+  const [privateReportReason, setPrivateReportReason] = useState("outro");
+  const [privateReportDetails, setPrivateReportDetails] = useState("");
 
   const [now, setNow] = useState(Date.now());
   const feedRef = useRef<HTMLDivElement | null>(null);
@@ -182,7 +190,8 @@ function Resenha() {
       _limit: 100,
     });
     if (feedError) {
-      if (!quiet) setError(feedError.message);
+      if (!quiet)
+        setError(publicErrorMessage(feedError, "Não foi possível abrir as mensagens da Resenha."));
     } else {
       const nextMessages = (data ?? []).map((message) => ({
         ...message,
@@ -215,9 +224,7 @@ function Resenha() {
     try {
       await loadRooms();
     } catch (roomError) {
-      setError(
-        roomError instanceof Error ? roomError.message : "Não foi possível abrir a Resenha.",
-      );
+      setError(publicErrorMessage(roomError, "Não foi possível abrir a Resenha."));
     } finally {
       setLoading(false);
     }
@@ -283,13 +290,19 @@ function Resenha() {
     event.preventDefault();
     if (!selectedId || !draft.trim() || sending || roomClosed) return;
     setSending(true);
+    const moderationStatus = await checkCommunityContent(draft, "chat");
+    if (moderationStatus === "blocked") {
+      setSending(false);
+      return toast.error(MESSAGE_MODERATION_MESSAGE);
+    }
     const { error: sendError } = await supabase.rpc("send_event_chat_message", {
       _event_id: selectedId,
       _body: draft.trim(),
-      _reply_to: replyingTo?.message_id ?? null,
+      _reply_to: replyingTo?.message_id ?? undefined,
     });
     setSending(false);
-    if (sendError) return toast.error(sendError.message);
+    if (sendError)
+      return toast.error(publicErrorMessage(sendError, "Não foi possível enviar a mensagem."));
     setDraft("");
     setReplyingTo(null);
     forceScrollRef.current = true;
@@ -302,7 +315,8 @@ function Resenha() {
     const { error: deleteError } = await supabase.rpc("delete_event_chat_message", {
       _message_id: message.message_id,
     });
-    if (deleteError) return toast.error(deleteError.message);
+    if (deleteError)
+      return toast.error(publicErrorMessage(deleteError, "Não foi possível apagar a mensagem."));
     toast.success(message.is_mine ? "Mensagem apagada." : "Mensagem retirada da Resenha.");
     await loadMessages(selectedId, true);
   }
@@ -318,8 +332,9 @@ function Resenha() {
       _blocked_user_id: message.author_id,
       _blocked: true,
     });
-    if (blockError) return toast.error(blockError.message);
-    toast.success("Usuário bloqueado nesta experiência.");
+    if (blockError)
+      return toast.error(publicErrorMessage(blockError, "Não foi possível bloquear essa pessoa."));
+    toast.success("Pessoa bloqueada. Conversas privadas ativas também foram encerradas.");
     await loadMessages(selectedId, true);
   }
 
@@ -328,9 +343,10 @@ function Resenha() {
     const { error: reportError } = await supabase.rpc("report_event_chat_message", {
       _message_id: reporting.message_id,
       _reason: reportReason,
-      _details: reportDetails.trim() || null,
+      _details: reportDetails.trim() || undefined,
     });
-    if (reportError) return toast.error(reportError.message);
+    if (reportError)
+      return toast.error(publicErrorMessage(reportError, "Não foi possível enviar a denúncia."));
     setReporting(null);
     setReportDetails("");
     setReportReason("outro");
@@ -340,51 +356,28 @@ function Resenha() {
   async function loadSalves() {
     if (!selectedId || !user) return;
     setSalvesLoading(true);
-    const { data, error: salveError } = await supabase
-      .from("salve_requests")
-      .select("id,sender_id,recipient_id,status,opener,created_at")
-      .eq("event_id", selectedId)
-      .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
-      .order("created_at", { ascending: false });
+    const { data, error: salveError } = await supabase.rpc("my_salve_requests", {
+      _event_id: selectedId,
+    });
     if (salveError) {
       setSalvesLoading(false);
-      return toast.error(salveError.message);
+      return toast.error(publicErrorMessage(salveError, "Não foi possível abrir os salves."));
     }
-
-    const rows = data ?? [];
-    const ids = [...new Set(rows.flatMap((item) => [item.sender_id, item.recipient_id]))];
-    const [{ data: people }, { data: threads }] = await Promise.all([
-      ids.length
-        ? supabase.from("profiles").select("id,display_name").in("id", ids)
-        : Promise.resolve({ data: [] as Array<{ id: string; display_name: string | null }> }),
-      supabase
-        .from("private_chat_threads")
-        .select("id,salve_request_id")
-        .eq("event_id", selectedId),
-    ]);
-    const names = new Map((people ?? []).map((item) => [item.id, item.display_name ?? "Bafafã"]));
-    const threadByRequest = new Map(
-      (threads ?? []).map((item) => [item.salve_request_id, item.id]),
-    );
-    setSalves(
-      rows.map((item) => ({
-        ...item,
-        sender_name: names.get(item.sender_id),
-        recipient_name: names.get(item.recipient_id),
-        thread_id: threadByRequest.get(item.id),
-      })),
-    );
+    setSalves((data ?? []) as SalveItem[]);
     setSalvesLoading(false);
   }
 
   async function sendSalve() {
     if (!salveTarget || !selectedId) return;
+    const moderationStatus = await checkCommunityContent(salveOpener, "chat");
+    if (moderationStatus === "blocked") return toast.error(MESSAGE_MODERATION_MESSAGE);
     const { error: salveError } = await supabase.rpc("send_salve_request", {
       _event_id: selectedId,
       _recipient_id: salveTarget.author_id,
-      _opener: salveOpener.trim() || null,
+      _opener: salveOpener.trim() || undefined,
     });
-    if (salveError) return toast.error(salveError.message);
+    if (salveError)
+      return toast.error(publicErrorMessage(salveError, "Não foi possível enviar o salve."));
     setSalveTarget(null);
     setSalveOpener("");
     toast.success("Salve enviado. A conversa só abre se a pessoa der moral.");
@@ -396,15 +389,16 @@ function Resenha() {
       _request_id: requestId,
       _accept: accept,
     });
-    if (responseError) return toast.error(responseError.message);
+    if (responseError)
+      return toast.error(publicErrorMessage(responseError, "Não foi possível responder ao salve."));
     toast.success(
       accept ? "Você deu moral. A conversa foi liberada." : "Tudo certo. O pedido foi encerrado.",
     );
     await loadSalves();
   }
 
-  async function openPrivateConversation(threadId: string, otherName: string) {
-    setPrivateThread({ id: threadId, otherName });
+  async function openPrivateConversation(threadId: string, otherName: string, otherUserId: string) {
+    setPrivateThread({ id: threadId, otherName, otherUserId });
     setPrivateDraft("");
     setPrivateLoading(true);
     const { data, error: messagesError } = await supabase
@@ -416,7 +410,9 @@ function Resenha() {
     setPrivateLoading(false);
     if (messagesError) {
       setPrivateThread(null);
-      return toast.error(messagesError.message);
+      return toast.error(
+        publicErrorMessage(messagesError, "Não foi possível abrir a conversa privada."),
+      );
     }
     setPrivateMessages(data ?? []);
   }
@@ -425,14 +421,61 @@ function Resenha() {
     event.preventDefault();
     if (!privateThread || !privateDraft.trim() || privateSending) return;
     setPrivateSending(true);
+    const moderationStatus = await checkCommunityContent(privateDraft, "chat");
+    if (moderationStatus === "blocked") {
+      setPrivateSending(false);
+      return toast.error(MESSAGE_MODERATION_MESSAGE);
+    }
     const { error: privateError } = await supabase.rpc("send_private_message", {
       _thread_id: privateThread.id,
       _body: privateDraft.trim(),
     });
     setPrivateSending(false);
-    if (privateError) return toast.error(privateError.message);
+    if (privateError)
+      return toast.error(
+        publicErrorMessage(privateError, "Não foi possível enviar a mensagem privada."),
+      );
     setPrivateDraft("");
-    await openPrivateConversation(privateThread.id, privateThread.otherName);
+    await openPrivateConversation(
+      privateThread.id,
+      privateThread.otherName,
+      privateThread.otherUserId,
+    );
+  }
+
+  async function blockPrivateUser() {
+    if (!privateThread) return;
+    if (
+      !window.confirm(
+        `Bloquear ${privateThread.otherName}? Esta conversa será encerrada e não reabre automaticamente.`,
+      )
+    )
+      return;
+
+    const { error: blockError } = await supabase.rpc("set_event_chat_block", {
+      _blocked_user_id: privateThread.otherUserId,
+      _blocked: true,
+    });
+    if (blockError)
+      return toast.error(publicErrorMessage(blockError, "Não foi possível bloquear essa pessoa."));
+    setPrivateThread(null);
+    setPrivateMessages([]);
+    toast.success("Pessoa bloqueada e conversa encerrada.");
+  }
+
+  async function submitPrivateReport() {
+    if (!privateReporting) return;
+    const { error: reportError } = await supabase.rpc("report_private_chat_message", {
+      _message_id: privateReporting.id,
+      _reason: privateReportReason,
+      _details: privateReportDetails.trim() || undefined,
+    });
+    if (reportError)
+      return toast.error(publicErrorMessage(reportError, "Não foi possível enviar a denúncia."));
+    setPrivateReporting(null);
+    setPrivateReportReason("outro");
+    setPrivateReportDetails("");
+    toast.success("Denúncia enviada. A moderação verá somente a mensagem denunciada.");
   }
 
   return (
@@ -508,19 +551,19 @@ function Resenha() {
                     <p className="mt-1 truncate font-black">A conversa de quem já chegou</p>
                   </div>
                   <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase ${
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-black uppercase ${
                       roomClosed ? "bg-white/12 text-white/65" : "bg-mango text-foreground"
                     }`}
                   >
                     {roomClosed ? "encerrada" : "ao vivo"}
                   </span>
                 </div>
-                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold text-white/65">
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-white/70">
                   <span className="flex items-center gap-1">
                     <UsersRound className="h-3.5 w-3.5" /> {participantCount} na conversa
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock3 className="h-3.5 w-3.5" /> A sala fecha junto com a Sessão da Casa
+                    <Clock3 className="h-3.5 w-3.5" /> A conversa encerra no fim da noite
                   </span>
                 </div>
               </div>
@@ -566,7 +609,7 @@ function Resenha() {
                               <Link
                                 to="/u/$username"
                                 params={{ username: message.author_username }}
-                                className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-foreground/20 bg-primary text-[10px] font-black text-white transition-transform hover:scale-105"
+                                className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-foreground/20 bg-primary text-xs font-black text-white transition-transform hover:scale-105"
                                 aria-label={`Abrir perfil de ${message.author_name}`}
                               >
                                 {message.author_avatar_url ? (
@@ -580,7 +623,7 @@ function Resenha() {
                                 )}
                               </Link>
                             ) : (
-                              <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-foreground/20 bg-primary text-[10px] font-black text-white">
+                              <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-foreground/20 bg-primary text-xs font-black text-white">
                                 {message.author_avatar_url ? (
                                   <img
                                     src={message.author_avatar_url}
@@ -616,17 +659,17 @@ function Resenha() {
                                   className="min-w-0 flex-1 text-[12px] font-black"
                                 />
                               )}
-                              <time className="shrink-0 text-[9px] font-bold text-muted-foreground">
+                              <time className="shrink-0 text-xs font-bold text-muted-foreground">
                                 {formatMessageTime(message.created_at)}
                               </time>
                             </div>
                             {message.author_title && !message.is_mine && (
-                              <p className="mt-0.5 truncate text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                              <p className="mt-0.5 truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">
                                 {message.author_title}
                               </p>
                             )}
                             {replied && (
-                              <div className="mt-1.5 rounded-lg border-l-2 border-primary bg-background/70 px-2 py-1.5 text-[11px] text-muted-foreground">
+                              <div className="mt-1.5 rounded-lg border-l-2 border-primary bg-background/70 px-2 py-1.5 text-xs text-muted-foreground">
                                 <strong>{replied.is_mine ? "Você" : replied.author_name}:</strong>{" "}
                                 {replied.body.slice(0, 72)}
                               </div>
@@ -710,7 +753,7 @@ function Resenha() {
               {roomClosed ? (
                 <div className="border-t-2 border-foreground bg-[#2c1b4a] px-4 py-3 text-center text-white">
                   <p className="text-sm font-black">Resenha encerrada.</p>
-                  <p className="mt-0.5 text-[11px] font-semibold text-white/65">
+                  <p className="mt-0.5 text-xs font-semibold text-white/65">
                     As mensagens ficam somente para consulta.
                   </p>
                 </div>
@@ -751,9 +794,10 @@ function Resenha() {
                       <Send className="h-5 w-5" />
                     </Button>
                   </div>
-                  <p className="mt-1 text-right text-[9px] font-bold text-muted-foreground">
-                    {draft.length}/300
-                  </p>
+                  <div className="mt-1 flex items-start justify-between gap-3 text-xs font-bold text-muted-foreground">
+                    <span>Resenha boa é sem ofensa ou discriminação.</span>
+                    <span className="shrink-0">{draft.length}/300</span>
+                  </div>
                 </form>
               )}
             </section>
@@ -875,7 +919,7 @@ function Resenha() {
                       <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{salve.opener}</p>
                     )}
                     <p className="mt-2 text-xs font-bold uppercase text-muted-foreground">
-                      {salve.status}
+                      {salveStatusLabel(salve.status)}
                     </p>
                     {incoming && salve.status === "pending" && (
                       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -898,7 +942,11 @@ function Resenha() {
                             className="w-full"
                             onClick={() => {
                               setSalvesOpen(false);
-                              void openPrivateConversation(salve.thread_id!, otherName ?? "Bafafã");
+                              void openPrivateConversation(
+                                salve.thread_id!,
+                                otherName ?? "Bafafã",
+                                salve.other_user_id,
+                              );
                             }}
                           >
                             <MessageCircleMore className="h-4 w-4" /> Abrir conversa
@@ -929,8 +977,14 @@ function Resenha() {
             <DialogTitle className="font-display text-2xl">
               Conversa com {privateThread?.otherName}
             </DialogTitle>
-            <DialogDescription>Esse papo só abriu porque os dois deram moral.</DialogDescription>
+            <DialogDescription>
+              Esse papo só abriu porque os dois deram moral. Você pode denunciar uma mensagem ou
+              encerrar o contato a qualquer momento.
+            </DialogDescription>
           </DialogHeader>
+          <Button type="button" variant="outline" size="sm" onClick={() => void blockPrivateUser()}>
+            <Ban className="h-4 w-4" /> Bloquear e encerrar conversa
+          </Button>
           <div className="min-h-48 flex-1 space-y-2 overflow-y-auto rounded-2xl bg-muted p-3">
             {privateLoading ? (
               <p className="py-12 text-center text-sm font-bold text-muted-foreground">
@@ -952,10 +1006,23 @@ function Resenha() {
                   >
                     <p className="whitespace-pre-wrap break-words">{message.body}</p>
                     <time
-                      className={`mt-1 block text-[9px] font-bold ${mine ? "opacity-70" : "text-muted-foreground"}`}
+                      className={`mt-1 block text-xs font-bold ${mine ? "opacity-75" : "text-muted-foreground"}`}
                     >
                       {formatMessageTime(message.created_at)}
                     </time>
+                    {!mine && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrivateReporting(message);
+                          setPrivateReportReason("outro");
+                          setPrivateReportDetails("");
+                        }}
+                        className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-xs font-black text-muted-foreground hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <Flag className="h-3.5 w-3.5" /> Denunciar mensagem
+                      </button>
+                    )}
                   </article>
                 );
               })
@@ -978,6 +1045,58 @@ function Resenha() {
               <Send className="h-5 w-5" />
             </Button>
           </form>
+          <p className="mt-1 text-xs font-bold text-muted-foreground">
+            A mesma regra vale no privado: sem ofensa, discriminação ou conteúdo sexual.
+          </p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(privateReporting)}
+        onOpenChange={(open) => !open && setPrivateReporting(null)}
+      >
+        <DialogContent className="bafafa-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Denunciar mensagem privada</DialogTitle>
+            <DialogDescription>
+              A moderação verá somente a mensagem denunciada, o motivo e as pessoas envolvidas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="private-report-reason">Motivo</Label>
+              <select
+                id="private-report-reason"
+                value={privateReportReason}
+                onChange={(event) => setPrivateReportReason(event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border-2 border-foreground bg-background px-3 text-sm font-bold"
+              >
+                {REPORT_REASONS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="private-report-details">Conte o que aconteceu (opcional)</Label>
+              <Textarea
+                id="private-report-details"
+                value={privateReportDetails}
+                onChange={(event) => setPrivateReportDetails(event.target.value.slice(0, 500))}
+                rows={4}
+                className="mt-2 border-2 border-foreground"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPrivateReporting(null)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={() => void submitPrivateReport()}>
+              Enviar denúncia
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>
@@ -999,7 +1118,7 @@ function MessageAction({
     <button
       type="button"
       onClick={onClick}
-      className={`grid h-7 w-7 place-items-center rounded-full hover:bg-background ${destructive ? "hover:text-destructive" : "hover:text-foreground"}`}
+      className={`grid h-11 w-11 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-background ${destructive ? "hover:text-destructive" : "hover:text-foreground"}`}
       aria-label={label}
       title={label}
     >
@@ -1012,6 +1131,17 @@ function formatMessageTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(
     new Date(value),
   );
+}
+
+function salveStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    pending: "Aguardando resposta",
+    accepted: "Conversa liberada",
+    declined: "Encerrado",
+    cancelled: "Encerrado",
+    expired: "Expirado",
+  };
+  return labels[status] ?? "Atualizando";
 }
 
 function ResenhaUnavailable({
@@ -1077,7 +1207,7 @@ function ResenhaUnavailable({
         {waiting
           ? "Sua presença já está confirmada. Volte no horário e entre direto na conversa."
           : ended
-            ? "As mensagens ficam fechadas até a próxima Sessão da Casa."
+            ? "As mensagens ficam fechadas até a próxima noite com Resenha."
             : "Sua presença está confirmada. Atualize para entrar na conversa."}
       </p>
       {!waiting && !ended && (

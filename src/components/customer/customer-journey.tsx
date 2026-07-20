@@ -273,7 +273,7 @@ function ReviewDialog({
     const { error } = await supabase.rpc("submit_event_review", {
       _event_id: review.event_id,
       _rating: rating,
-      _comment: comment.trim() || null,
+      _comment: comment.trim() || undefined,
       _would_return: true,
     });
     setSaving(false);

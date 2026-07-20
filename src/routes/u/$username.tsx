@@ -112,7 +112,7 @@ function PublicProfilePage() {
                     @{profile.username}
                   </p>
                   {profile.active_title && (
-                    <span className="mt-3 inline-flex rounded-full bg-foreground px-3 py-1 text-[10px] font-black uppercase tracking-wide text-background">
+                    <span className="mt-3 inline-flex rounded-full bg-foreground px-3 py-1 text-xs font-black uppercase tracking-wide text-background">
                       {profile.active_title}
                     </span>
                   )}
@@ -147,7 +147,7 @@ function PublicProfilePage() {
                     <p className="text-xl font-black leading-none">
                       {profile.checkin_count ?? "—"}
                     </p>
-                    <p className="mt-1 text-[9px] font-black uppercase text-muted-foreground">
+                    <p className="mt-1 text-xs font-black uppercase text-muted-foreground">
                       check-ins
                     </p>
                   </div>
@@ -155,13 +155,11 @@ function PublicProfilePage() {
                     <p className="text-xl font-black leading-none">
                       {profile.badge_count ?? badges.length}
                     </p>
-                    <p className="mt-1 text-[9px] font-black uppercase text-muted-foreground">
-                      selos
-                    </p>
+                    <p className="mt-1 text-xs font-black uppercase text-muted-foreground">selos</p>
                   </div>
                   <div>
                     <Music2 className="mx-auto h-5 w-5 text-samba" />
-                    <p className="mt-1 text-[9px] font-black uppercase text-muted-foreground">
+                    <p className="mt-1 text-xs font-black uppercase text-muted-foreground">
                       Bafafã
                     </p>
                   </div>
@@ -200,7 +198,7 @@ function PublicProfilePage() {
                     <h2 className="font-display text-xl">Selos à mostra</h2>
                   </div>
                 </div>
-                <span className="rounded-full bg-lagoa px-3 py-1 text-[10px] font-black uppercase">
+                <span className="rounded-full bg-lagoa px-3 py-1 text-xs font-black uppercase">
                   {badges.length}
                 </span>
               </div>
@@ -229,9 +227,9 @@ function PublicProfilePage() {
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex items-center gap-2 text-[11px] font-bold opacity-70">
+              <div className="mt-4 flex items-center gap-2 text-xs font-bold opacity-70">
                 <TicketCheck className="h-4 w-4" /> Só quem faz check-in participa da conversa do
-                evento.
+                noite.
               </div>
             </section>
           </div>

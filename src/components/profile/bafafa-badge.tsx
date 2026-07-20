@@ -84,7 +84,7 @@ export function CompactBadgeMark({
       title={`${badge.name}${badge.description ? ` — ${badge.description}` : ""}`}
       className={cn(
         "inline-flex shrink-0 items-center justify-center gap-1 border-2 font-extrabold uppercase",
-        showLabel ? "rounded-full px-2 py-1 text-[9px] tracking-[0.08em]" : "h-6 w-6 rounded-full",
+        showLabel ? "rounded-full px-2 py-1 text-xs tracking-[0.08em]" : "h-6 w-6 rounded-full",
         styleFor(badge),
         founder && "rotate-[-4deg]",
         className,
@@ -133,7 +133,7 @@ export function BadgeSticker({
       <div className="min-w-0">
         <p className="truncate text-sm font-black leading-tight">{badge.name}</p>
         {badge.description && (
-          <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">
+          <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
             {badge.description}
           </p>
         )}
@@ -167,7 +167,7 @@ export function NameWithBadges({
         ))}
       </span>
       {sorted.length > maxBadges && (
-        <span className="shrink-0 rounded-full border border-foreground/15 bg-background px-1.5 py-0.5 text-[9px] font-black">
+        <span className="shrink-0 rounded-full border border-foreground/15 bg-background px-1.5 py-0.5 text-xs font-black">
           +{sorted.length - maxBadges}
         </span>
       )}

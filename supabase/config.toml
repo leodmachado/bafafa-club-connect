@@ -1,4 +1,4 @@
-project_id = "xculwvekfctuqdogdaec"
+project_id = "xijjohgokwfkqfkkhsyn"
 
 # Ambiente local de testes: cadastro por e-mail sem etapa de confirmação.
 # No projeto hospedado, a mesma opção precisa ser alterada no painel do Supabase.

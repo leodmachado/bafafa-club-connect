@@ -1,7 +1,7 @@
 {
   "name": "BAFAFÁ — Clube dos Bafafãs",
   "short_name": "Bafafá",
-  "description": "Check-in em eventos, mimos, selos e títulos do Bafafá Bar em Natal/RN.",
+  "description": "BAFAFEED, Fofoquinhas, Resenha e carteirinha do Bafafá Bar em Natal/RN.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

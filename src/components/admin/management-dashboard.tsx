@@ -330,8 +330,8 @@ export function ManagementDashboard({
     setExporting(kind);
     const { data: result, error } = await supabase.rpc("admin_export_data", {
       _kind: kind,
-      _event_id: eventId === "all" ? null : eventId,
-      _from: fromDate?.toISOString() ?? null,
+      _event_id: eventId === "all" ? undefined : eventId,
+      _from: fromDate?.toISOString() ?? undefined,
       _to: toDate.toISOString(),
     });
     setExporting(null);

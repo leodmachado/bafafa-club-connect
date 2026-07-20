@@ -22,7 +22,7 @@ function NotFoundComponent() {
         <h1 className="wordmark text-7xl text-primary">404</h1>
         <h2 className="mt-4 text-2xl font-display">Essa Fofoquinha sumiu</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          A gente procurou, procurou e nada. Volta pra rodinha e tenta de novo.
+          A gente procurou, procurou e nada. Volta ao Início e tenta de novo.
         </p>
         <div className="mt-6">
           <Link
@@ -81,7 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Clube oficial do Bafafá Bar em Natal/RN. Check-in em eventos, mimos, selos e títulos.",
+          "Aplicativo oficial do Bafafá Bar em Natal/RN: BAFAFEED, Fofoquinhas, Resenha e carteirinha.",
       },
       { name: "theme-color", content: "#fff8e9" },
       { name: "robots", content: "noindex,nofollow,noarchive,nosnippet" },
@@ -92,7 +92,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Clube oficial do Bafafá Bar em Natal/RN. Check-in em eventos, mimos, selos e títulos.",
+          "Aplicativo oficial do Bafafá Bar em Natal/RN: BAFAFEED, Fofoquinhas, Resenha e carteirinha.",
       },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "pt_BR" },
@@ -101,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Clube oficial do Bafafá Bar em Natal/RN. Check-in em eventos, mimos, selos e títulos.",
+          "Aplicativo oficial do Bafafá Bar em Natal/RN: BAFAFEED, Fofoquinhas, Resenha e carteirinha.",
       },
       {
         property: "og:image",

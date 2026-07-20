@@ -247,7 +247,7 @@ function StaffCheckin() {
       _event_id: eventId,
       _items: items,
       _commercial_token: commercialCode.token,
-      _external_reference: externalReference.trim() || null,
+      _external_reference: externalReference.trim() || undefined,
       _source: "manual",
       _service_fee_cents: 0,
       _tip_cents: 0,

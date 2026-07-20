@@ -110,8 +110,8 @@ function ResetPassword() {
               <p className="section-kicker text-muted-foreground">Recuperação segura</p>
               <h1 className="mt-1 font-display text-3xl">Nova senha, novo bafafá.</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Use pelo menos 10 caracteres, com letra e número. Depois da troca, as outras sessões
-                serão encerradas.
+                Use pelo menos 12 caracteres, com maiúscula, minúscula, número e símbolo. Depois da
+                troca, as outras sessões serão encerradas.
               </p>
             </div>
             <PasswordInput

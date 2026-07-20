@@ -23,7 +23,7 @@ export function Wordmark({ className, variant = "full", tone = "primary" }: Word
         />
       </span>
       {variant === "full" && (
-        <span className="mt-1.5 font-poster text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="mt-1.5 font-poster text-xs uppercase tracking-[0.18em] text-muted-foreground">
           Clube dos Bafafãs · Natal/RN
         </span>
       )}

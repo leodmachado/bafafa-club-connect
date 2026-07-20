@@ -43,7 +43,7 @@ function Checkin() {
     setError(null);
     await supabase.rpc("sync_event_statuses");
     const { data, error: rpcError } = await supabase.rpc("my_house_session");
-    if (rpcError) setError(rpcError.message);
+    if (rpcError) setError(publicErrorMessage(rpcError, "Não foi possível abrir o check-in."));
     else setSession(parseHouseSession(data));
     setLoading(false);
   }, []);
@@ -210,8 +210,8 @@ function Checkin() {
                 A casa está fechada agora.
               </h2>
               <p className="mt-3 text-sm font-semibold opacity-75">
-                O check-in aparece quando o Bafafá abre a Sessão da Casa. As Fofoquinhas continuam
-                disponíveis no Início.
+                O check-in aparece quando o Bafafá abre a noite. As Fofoquinhas continuam
+                disponíveis no BAFAFEED.
               </p>
               <Link to="/inicio" className="mt-5 inline-flex items-center gap-2 font-black">
                 Voltar ao Início <ArrowLeft className="h-4 w-4 rotate-180" />
@@ -222,7 +222,7 @@ function Checkin() {
               <CheckCircle2 className="h-9 w-9" />
               <h2 className="mt-4 font-display text-4xl leading-none">Presença confirmada.</h2>
               <p className="mt-3 text-sm font-semibold opacity-85">
-                Sua entrada na Resenha já está liberada enquanto a Sessão da Casa estiver aberta.
+                Sua entrada na Resenha já está liberada enquanto a noite estiver aberta.
               </p>
               <Link
                 to="/resenha"
@@ -257,7 +257,7 @@ function Checkin() {
                 </button>
                 {!session.checkin_open && (
                   <p className="mt-3 text-center text-xs font-bold opacity-70">
-                    O check-in desta Sessão da Casa já encerrou.
+                    O check-in de hoje já encerrou.
                   </p>
                 )}
               </section>

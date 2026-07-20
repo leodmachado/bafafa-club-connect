@@ -35,11 +35,12 @@ export function BottomNav() {
               <Link
                 to={to}
                 className={cn(
-                  "mx-auto flex min-h-14 w-full max-w-[96px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border-2 px-1 py-1.5 text-[10px] font-extrabold transition-all duration-150",
+                  "mx-auto flex min-h-14 w-full max-w-[96px] flex-col items-center justify-center gap-1 rounded-[1.15rem] border-2 px-1 py-1.5 text-xs font-extrabold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   active
                     ? `${activeColor} border-foreground shadow-[2px_3px_0_var(--foreground)]`
                     : "border-transparent text-muted-foreground hover:-translate-y-0.5 hover:bg-muted hover:text-foreground",
                 )}
+                aria-current={active ? "page" : undefined}
               >
                 <Icon className="h-5 w-5" strokeWidth={active ? 2.7 : 2.1} />
                 <span>{label}</span>

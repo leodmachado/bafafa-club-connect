@@ -76,7 +76,7 @@ export function FofocometroCard({ goal, compact = false, showAction = true }: Pr
 
         {showAction && completed && (
           <div className="mt-4 flex items-center gap-2 text-sm font-black text-white/85">
-            <Megaphone className="h-4 w-4" /> A galera completou a meta deste evento.
+            <Megaphone className="h-4 w-4" /> A galera completou a meta da noite.
           </div>
         )}
       </div>

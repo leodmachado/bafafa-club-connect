@@ -41,7 +41,7 @@ function CarteiraDigital() {
     setGenerating(true);
     const { data, error } = await supabase.rpc("create_my_qr_token", {
       _purpose: "customer",
-      _ref_id: null,
+      _ref_id: undefined,
     });
     setGenerating(false);
     if (error)

@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { campaignBenefitLabel } from "@/lib/bafafa";
 import { selectFofocometroGoal, type FofocometroGoal } from "@/lib/fofocometro";
 import { parseHouseSession, type HouseSession } from "@/lib/house-session";
+import { publicErrorMessage } from "@/lib/public-error";
 import {
   nextProfileTask,
   parseProfileCompletion,
@@ -142,7 +143,10 @@ function Inicio() {
     const publicModulesFailed = Boolean(posts.error && promotions.error);
     if (publicModulesFailed) {
       setError(
-        posts.error?.message ?? promotions.error?.message ?? "Não foi possível carregar o feed.",
+        publicErrorMessage(
+          posts.error ?? promotions.error,
+          "Não foi possível carregar o BAFAFEED.",
+        ),
       );
     } else {
       if (goals.error) console.warn("Fofocômetro indisponível:", goals.error.message);
@@ -531,11 +535,15 @@ function PromotionCard({
             onClick={onExternal}
             className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-[3px_4px_0_var(--foreground)]"
           >
-            {promo.external_button_label || "Garantir promoção"}{" "}
-            <ExternalLink className="h-4 w-4" />
+            {promo.external_button_label || "Abrir site"} <ExternalLink className="h-4 w-4" />
           </button>
         )}
       </div>
+      {externalEnabled && (
+        <p className="mt-3 text-xs font-semibold text-muted-foreground">
+          Abre no site indicado. Registramos apenas o clique; a confirmação acontece fora do app.
+        </p>
+      )}
     </article>
   );
 }

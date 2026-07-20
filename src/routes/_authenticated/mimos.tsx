@@ -108,7 +108,8 @@ function Fofoquinhas() {
         .limit(30),
     ]);
     const firstError = fofoquinhas.error ?? rewards.error;
-    if (firstError) setError(firstError.message);
+    if (firstError)
+      setError(publicErrorMessage(firstError, "Não foi possível carregar as Fofoquinhas."));
     else {
       setItems(
         ((fofoquinhas.data ?? []) as Fofoquinha[]).filter(
@@ -286,14 +287,20 @@ function Fofoquinhas() {
                       </p>
                     )}
                     {item.redemption_mode !== "app" && item.external_url && (
-                      <button
-                        type="button"
-                        onClick={() => openExternalPromotion(item)}
-                        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-[3px_4px_0_var(--foreground)]"
-                      >
-                        {item.external_button_label || "Garantir promoção"}
-                        <ExternalLink className="h-4 w-4" />
-                      </button>
+                      <div className="mt-5">
+                        <button
+                          type="button"
+                          onClick={() => openExternalPromotion(item)}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-[3px_4px_0_var(--foreground)]"
+                        >
+                          {item.external_button_label || "Abrir site"}
+                          <ExternalLink className="h-4 w-4" />
+                        </button>
+                        <p className="mt-3 text-xs font-semibold text-foreground/70">
+                          Abre no site indicado. Registramos apenas o clique; a confirmação acontece
+                          fora do app.
+                        </p>
+                      </div>
                     )}
                   </article>
                 ))}
@@ -418,7 +425,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-2 py-2 text-[10px] font-black ${active ? "border-2 border-foreground bg-background shadow-[2px_2px_0_var(--foreground)]" : "text-muted-foreground"}`}
+      className={`rounded-xl px-2 py-2 text-xs font-black ${active ? "border-2 border-foreground bg-background shadow-[2px_2px_0_var(--foreground)]" : "text-muted-foreground"}`}
     >
       <Icon className="mx-auto mb-1 h-4 w-4" /> {label} <span className="opacity-60">{count}</span>
     </button>
@@ -467,11 +474,16 @@ function RewardCard({
             onClick={onExternal}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-card px-4 py-3 text-sm font-black"
           >
-            {item.external_button_label || "Garantir promoção"}
+            {item.external_button_label || "Abrir site"}
             <ExternalLink className="h-4 w-4" />
           </button>
         )}
       </div>
+      {externalEnabled && (
+        <p className="mt-3 text-xs font-semibold text-muted-foreground">
+          Abre no site indicado. Registramos apenas o clique; a confirmação acontece fora do app.
+        </p>
+      )}
     </article>
   );
 }

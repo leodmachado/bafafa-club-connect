@@ -1,53 +1,63 @@
-# BAFAFÁ — Clube dos Bafafãs
+# BAFAFÁ CONNECT
 
 MVP mobile-first para aquisição e relacionamento de clientes do Bafafá Bar — Natal/RN.
 
-## Foco desta versão
+## Versão atual: V20.4.2 — privacidade e moderação preventiva para o piloto
 
 O produto foi reduzido para um ciclo simples:
 
-**cadastro → perfil progressivo → evento → check-in → mimo → selo/título**
+**cadastro e consentimento → BAFAFEED → Fofoquinhas → check-in contextual → Resenha → carteirinha → retorno**
 
 A navegação principal agora contém:
 
-- **Início** — próximo evento, progresso do perfil, mimos e check-ins;
-- **Eventos** — agenda e campanhas relacionadas;
-- **Check-in** — código temporário de seis dígitos;
-- **Mimos** — disponíveis, utilizados e expirados;
-- **Perfil** — preferências, progresso, selos e título ativo.
+- **Início / BAFAFEED** — conteúdo, novidades e check-in contextual;
+- **Fofoquinhas** — promoções, vantagens e missões;
+- **Resenha** — conversa da noite para clientes com presença válida;
+- **Perfil** — carteirinha, privacidade e perfil público seguro.
 
-Os módulos Fofoquinhas, Reservas, Assinaturas e rede social continuam fora da navegação e podem ser retomados no futuro.
+Agenda/Eventos permanece no código e no painel, mas está oculta da navegação do cliente. A estrutura
+de eventos também sustenta a operação interna da Sessão da Casa, sem expor esse termo no aplicativo.
 
 ## Autenticação
 
-Durante o desenvolvimento, o aplicativo continua com **e-mail e senha**, evitando custo de SMS. O cadastro inicial foi reduzido ao essencial.
-
-Antes do piloto com clientes reais, a autenticação deverá ser migrada para telefone + OTP. A função `handle_new_user` já foi adaptada para aceitar usuários criados por telefone no Supabase Auth.
+O aplicativo aceita telefone + OTP e e-mail + senha. Todo cadastro exige consentimentos explícitos;
+marketing começa desligado. Maioridade é derivada da data de nascimento e verificada novamente no
+banco antes de check-in e Resenha.
 
 ## Configuração local
 
 1. Copie `.env.example` para `.env.local`.
 2. Preencha somente as chaves públicas do Supabase.
-3. Instale as dependências com o gerenciador do projeto.
-4. Aplique as migrations em `supabase/migrations` no projeto Supabase correto.
-5. Inicie o projeto com `npm run dev` ou o comando equivalente do seu ambiente.
+3. Execute `bun install`.
+4. Aplique somente migrations ainda não registradas no projeto Supabase correto.
+5. Execute `bun run lint`, `bun run typecheck` e `bun run build`.
+6. Inicie com `bun run dev`.
 
 Nunca coloque uma chave `service_role` no frontend ou em arquivos versionados.
 
-## Migration principal desta entrega
+## Migrations da prontidão para o piloto
 
-`supabase/migrations/20260714140000_mvp_secure_checkin.sql`
+`supabase/migrations/20260729120000_pilot_readiness_v204.sql`
 
-Ela adiciona:
+`supabase/migrations/20260730120000_privacy_defaults_v2041.sql`
 
-- correção de permissão da função `has_role` usada pelas políticas RLS;
-- criação de códigos temporários de check-in e resgate;
-- validação de check-in apenas por equipe/admin;
-- liberação automática de campanhas após check-in;
-- resgate de mimo apenas por equipe/admin;
-- proteção do título ativo;
-- títulos e selos sincronizados com check-ins e progresso do perfil;
-- compatibilidade do gatilho de cadastro com telefone/OTP futuro.
+`supabase/migrations/20260731120000_content_moderation_v2042.sql`
+
+A migration V20.4.2 ainda precisa ser aplicada no Supabase correto. Não faça merge ou deploy de
+produção antes de executar o script de verificação e confirmar `verificacao_ok = true`.
+
+Ela adiciona e consolida:
+
+- perfil fechado por padrão para novos cadastros;
+- perfis legados fechados com snapshot auditável das preferências anteriores;
+- consentimentos explícitos conciliados com os campos de CRM;
+- maioridade obrigatória em check-in e Resenha;
+- salves sem consulta direta à tabela de perfis;
+- bloqueio, limite de envio, denúncia e moderação da conversa privada;
+- remoção da listagem ampla dos buckets públicos;
+- revogação de execução direta das funções de gatilho.
+- bloqueio preventivo de nomes, `@`, Resenha, salves e mensagens privadas ofensivas;
+- lista de moderação mantida em schema privado e validação final por gatilhos no banco.
 
 ## Papéis
 
@@ -65,7 +75,7 @@ A rota operacional é `/staff/checkin`. Somente `equipe` e `admin` podem validar
 - CRUD visual de eventos e campanhas no painel administrativo;
 - upload de foto de perfil;
 - testes automatizados e pipeline de CI;
-- política final de retenção e exportação de dados;
+- automação da rotina de retenção após validar o relatório trimestral no piloto;
 - promoção real definida pelo Bafafá.
 
 ## Teste rápido

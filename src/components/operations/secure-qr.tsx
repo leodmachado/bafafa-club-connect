@@ -56,7 +56,7 @@ export function SecureQr({
           title="QR Code temporário do Bafafá"
         />
       </div>
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em]">
+      <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-[0.08em]">
         <ShieldCheck className="h-3.5 w-3.5" /> {label}
       </p>
       <p className="mt-2 font-mono text-2xl font-black tracking-[0.15em]">{groups}</p>

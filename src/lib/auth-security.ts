@@ -52,16 +52,22 @@ export type PasswordCheck = {
 
 export function validatePassword(password: string): PasswordCheck {
   const issues: string[] = [];
-  if (password.length < 10) issues.push("Use pelo menos 10 caracteres.");
-  if (!/[A-Za-zÀ-ÿ]/.test(password)) issues.push("Inclua pelo menos uma letra.");
+  if (password.length < 12) issues.push("Use pelo menos 12 caracteres.");
+  if (!/[A-ZÁÀÂÃÉÈÊÍÏÓÔÕÖÚÇÑ]/.test(password)) {
+    issues.push("Inclua pelo menos uma letra maiúscula.");
+  }
+  if (!/[a-záàâãéèêíïóôõöúçñ]/.test(password)) {
+    issues.push("Inclua pelo menos uma letra minúscula.");
+  }
   if (!/\d/.test(password)) issues.push("Inclua pelo menos um número.");
+  if (!/[^A-Za-zÀ-ÿ0-9]/.test(password)) issues.push("Inclua pelo menos um símbolo.");
   if (/^(.)\1+$/.test(password)) issues.push("Evite repetir o mesmo caractere.");
   if (/password|senha|123456|qwerty|bafafa/i.test(password)) {
     issues.push("Evite palavras e sequências fáceis de adivinhar.");
   }
 
   let score = 0;
-  if (password.length >= 10) score += 1;
+  if (password.length >= 12) score += 1;
   if (password.length >= 14) score += 1;
   if (/[A-ZÁ-Ú]/.test(password) && /[a-zá-ú]/.test(password)) score += 1;
   if (/\d/.test(password)) score += 1;
