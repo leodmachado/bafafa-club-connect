@@ -1,4 +1,6 @@
+import type { User } from "@supabase/supabase-js";
 import type { AppRole } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const PRIVILEGED_ROLES: AppRole[] = ["admin", "moderador", "equipe"];
 export const RECOVERY_MARKER_KEY = "bafafa-password-recovery";
@@ -9,8 +11,54 @@ export type RecoveryMarker = {
   createdAt: number;
 };
 
+export type AuthAssuranceLevel = "aal1" | "aal2" | null;
+
 export function isPrivilegedRole(roles: AppRole[]): boolean {
   return roles.some((role) => PRIVILEGED_ROLES.includes(role));
+}
+
+export async function loadCurrentUserRoles(userId: string): Promise<AppRole[]> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+  return (data ?? []).map((row) => row.role as AppRole);
+}
+
+export async function loadCurrentAssuranceLevel(): Promise<AuthAssuranceLevel> {
+  const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error) throw error;
+  return (data?.currentLevel as AuthAssuranceLevel | undefined) ?? "aal1";
+}
+
+export type PrivilegedSessionStatus = {
+  user: User;
+  roles: AppRole[];
+  privileged: boolean;
+  assuranceLevel: AuthAssuranceLevel;
+  requiresMfa: boolean;
+};
+
+/**
+ * Fonte única para guards de rota. Contas privilegiadas só podem sair da tela
+ * de segurança quando a sessão atual estiver em AAL2.
+ */
+export async function inspectPrivilegedSession(user: User): Promise<PrivilegedSessionStatus> {
+  const [roles, assuranceLevel] = await Promise.all([
+    loadCurrentUserRoles(user.id),
+    loadCurrentAssuranceLevel(),
+  ]);
+  const privileged = isPrivilegedRole(roles);
+
+  return {
+    user,
+    roles,
+    privileged,
+    assuranceLevel,
+    requiresMfa: privileged && assuranceLevel !== "aal2",
+  };
 }
 
 export function markPasswordRecovery(userId: string): void {
