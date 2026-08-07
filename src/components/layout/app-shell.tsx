@@ -17,11 +17,13 @@ export function ScreenHeader({
   title,
   eyebrow,
   action,
+  meta,
   tone = "plain",
 }: {
   title: ReactNode;
   eyebrow?: ReactNode;
   action?: ReactNode;
+  meta?: ReactNode;
   tone?: "plain" | "brick" | "blue" | "green";
 }) {
   const toneClass =
@@ -53,7 +55,11 @@ export function ScreenHeader({
           <h1 className="mt-1 truncate font-display text-4xl leading-none">{title}</h1>
           {tone !== "plain" && (
             <p className="mt-2 flex items-center gap-1.5 text-xs font-bold opacity-75">
-              <MapPin className="h-3.5 w-3.5" /> Praça Dr. Amaro de Souza · Lagoa Nova
+              {meta ?? (
+                <>
+                  <MapPin className="h-3.5 w-3.5" /> Praça Dr. Amaro de Souza · Lagoa Nova
+                </>
+              )}
             </p>
           )}
         </div>

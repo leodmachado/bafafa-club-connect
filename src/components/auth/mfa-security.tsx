@@ -2,6 +2,7 @@ import { publicErrorMessage } from "@/lib/public-error";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import {
+  ArrowLeft,
   CheckCircle2,
   Copy,
   KeyRound,
@@ -138,8 +139,11 @@ export function MfaGate({
       ) : (
         <MfaEnrollment required onSuccess={security.refresh} />
       )}
-      <Link to="/inicio" className="text-sm font-black underline underline-offset-4">
-        Voltar ao aplicativo
+      <Link
+        to="/inicio"
+        className="inline-flex items-center gap-2 text-sm font-black underline underline-offset-4"
+      >
+        <ArrowLeft className="h-4 w-4" /> Voltar ao aplicativo
       </Link>
     </MfaFrame>
   );

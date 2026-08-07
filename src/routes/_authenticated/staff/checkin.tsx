@@ -8,6 +8,7 @@ import {
   type SetStateAction,
 } from "react";
 import {
+  ArrowLeft,
   Camera,
   CheckCircle2,
   CircleDollarSign,
@@ -124,7 +125,6 @@ function StaffCheckin() {
 
   const loadData = useCallback(async () => {
     if (!allowed) return;
-    await supabase.rpc("sync_event_statuses");
     const [eventResult, productResult] = await Promise.all([
       supabase
         .from("events")
@@ -288,14 +288,14 @@ function StaffCheckin() {
             <button
               type="button"
               onClick={() => void loadData()}
-              className="grid h-10 w-10 place-items-center rounded-full border-2 border-foreground bg-card shadow-[2px_3px_0_var(--foreground)]"
+              className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-card shadow-[2px_3px_0_var(--foreground)]"
               aria-label="Atualizar"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
             <Link
               to="/inicio"
-              className="grid h-10 w-10 place-items-center rounded-full border-2 border-foreground bg-card shadow-[2px_3px_0_var(--foreground)]"
+              className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-card shadow-[2px_3px_0_var(--foreground)]"
               aria-label="Sair"
             >
               <LogOut className="h-4 w-4" />
@@ -754,9 +754,9 @@ function AccessDenied() {
         </p>
         <Link
           to="/inicio"
-          className="mt-6 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
         >
-          Voltar
+          <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
       </div>
     </div>

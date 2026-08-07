@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Eye, EyeOff, KeyRound, Loader2, ShieldAlert } from "lucide-react";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BafafaSign } from "@/components/brand/bafafa-sign";
 import {
   clearPasswordRecovery,
   friendlyAuthError,
@@ -77,7 +77,7 @@ function ResetPassword() {
   return (
     <div className="app-canvas min-h-screen px-5 py-8">
       <div className="mx-auto max-w-lg">
-        <Wordmark variant="short" />
+        <BafafaSign size="compact" />
 
         {state === "checking" && (
           <div className="mt-10 flex items-center gap-3 rounded-2xl border-2 border-foreground/10 bg-card p-5">

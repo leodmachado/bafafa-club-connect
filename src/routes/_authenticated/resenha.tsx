@@ -10,6 +10,7 @@ import {
   type UIEvent,
 } from "react";
 import {
+  ArrowLeft,
   ArrowDown,
   Ban,
   Clock3,
@@ -101,6 +102,96 @@ type PrivateChatMessage = {
   deleted_at: string | null;
 };
 
+type ChatRoomsSnapshot = { rooms: ChatRoom[]; houseSession: HouseSession | null };
+const CHAT_CACHE_WINDOW_MS = 8 * 1000;
+const chatRoomsCache = new Map<
+  string,
+  { value?: ChatRoomsSnapshot; expiresAt: number; request?: Promise<ChatRoomsSnapshot> }
+>();
+const chatMessagesCache = new Map<
+  string,
+  { value: ChatMessage[]; expiresAt: number; request?: Promise<ChatMessage[]> }
+>();
+
+async function fetchChatRooms(): Promise<ChatRoomsSnapshot> {
+  const [{ data: roomData, error: roomError }, { data: sessionData, error: sessionError }] =
+    await Promise.all([supabase.rpc("my_event_chat_rooms"), supabase.rpc("my_house_session")]);
+  if (roomError) throw roomError;
+  if (sessionError) throw sessionError;
+
+  return {
+    rooms: (roomData ?? []).map((room) => ({
+      ...room,
+      message_count: Number(room.message_count ?? 0),
+    })) as ChatRoom[],
+    houseSession: parseHouseSession(sessionData),
+  };
+}
+
+function getChatRooms(userId: string, force = false): Promise<ChatRoomsSnapshot> {
+  const cached = chatRoomsCache.get(userId);
+  if (!force && cached?.value && cached.expiresAt > Date.now()) {
+    return Promise.resolve(cached.value);
+  }
+  if (cached?.request) return cached.request;
+
+  const request = fetchChatRooms()
+    .then((value) => {
+      chatRoomsCache.set(userId, { value, expiresAt: Date.now() + CHAT_CACHE_WINDOW_MS });
+      return value;
+    })
+    .catch((error) => {
+      chatRoomsCache.delete(userId);
+      throw error;
+    });
+  chatRoomsCache.set(userId, {
+    value: cached?.value,
+    expiresAt: cached?.expiresAt ?? 0,
+    request,
+  });
+  return request;
+}
+
+async function fetchChatMessages(eventId: string): Promise<ChatMessage[]> {
+  const { data, error } = await supabase.rpc("get_event_chat_feed", {
+    _event_id: eventId,
+    _limit: 100,
+  });
+  if (error) throw error;
+  return (data ?? []).map((message) => ({
+    ...message,
+    author_badges: Array.isArray(message.author_badges)
+      ? (message.author_badges as unknown as BafafaBadgeDefinition[])
+      : [],
+  })) as ChatMessage[];
+}
+
+function getChatMessages(userId: string, eventId: string, force = false): Promise<ChatMessage[]> {
+  const cacheKey = `${userId}:${eventId}`;
+  const cached = chatMessagesCache.get(cacheKey);
+  if (!force && cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value);
+  if (cached?.request) return cached.request;
+
+  const request = fetchChatMessages(eventId)
+    .then((value) => {
+      chatMessagesCache.set(cacheKey, {
+        value,
+        expiresAt: Date.now() + CHAT_CACHE_WINDOW_MS,
+      });
+      return value;
+    })
+    .catch((error) => {
+      chatMessagesCache.delete(cacheKey);
+      throw error;
+    });
+  chatMessagesCache.set(cacheKey, {
+    value: cached?.value ?? [],
+    expiresAt: cached?.expiresAt ?? 0,
+    request,
+  });
+  return request;
+}
+
 const REPORT_REASONS = [
   ["spam", "Spam ou divulgação"],
   ["assedio", "Assédio ou insistência"],
@@ -165,58 +256,53 @@ function Resenha() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const loadRooms = useCallback(async () => {
-    const [{ data: roomData, error: roomError }, { data: sessionData, error: sessionError }] =
-      await Promise.all([supabase.rpc("my_event_chat_rooms"), supabase.rpc("my_house_session")]);
-    if (roomError) throw roomError;
-    if (sessionError) throw sessionError;
+  const loadRooms = useCallback(
+    async (force = false) => {
+      if (!user) return;
+      const snapshot = await getChatRooms(user.id, force);
+      const nextRooms = snapshot.rooms;
+      setHouseSession(snapshot.houseSession);
+      setRooms(nextRooms);
+      setSelectedId((current) => {
+        if (current && nextRooms.some((room) => room.event_id === current)) return current;
+        return nextRooms[0]?.event_id ?? "";
+      });
+    },
+    [user],
+  );
 
-    const nextRooms = (roomData ?? []).map((room) => ({
-      ...room,
-      message_count: Number(room.message_count ?? 0),
-    })) as ChatRoom[];
-    setHouseSession(parseHouseSession(sessionData));
-    setRooms(nextRooms);
-    setSelectedId((current) => {
-      if (current && nextRooms.some((room) => room.event_id === current)) return current;
-      return nextRooms[0]?.event_id ?? "";
-    });
-  }, []);
+  const loadMessages = useCallback(
+    async (eventId: string, quiet = false, force = false) => {
+      if (!user) return;
+      if (!quiet) setLoadingMessages(true);
+      try {
+        const nextMessages = await getChatMessages(user.id, eventId, force);
 
-  const loadMessages = useCallback(async (eventId: string, quiet = false) => {
-    if (!quiet) setLoadingMessages(true);
-    const { data, error: feedError } = await supabase.rpc("get_event_chat_feed", {
-      _event_id: eventId,
-      _limit: 100,
-    });
-    if (feedError) {
-      if (!quiet)
-        setError(publicErrorMessage(feedError, "Não foi possível abrir as mensagens da Resenha."));
-    } else {
-      const nextMessages = (data ?? []).map((message) => ({
-        ...message,
-        author_badges: Array.isArray(message.author_badges)
-          ? (message.author_badges as unknown as BafafaBadgeDefinition[])
-          : [],
-      })) as ChatMessage[];
+        const wasEmpty = messagesRef.current.length === 0;
+        const oldIds = new Set(messagesRef.current.map((message) => message.message_id));
+        const added = nextMessages.filter((message) => !oldIds.has(message.message_id));
+        const ownAdded = added.some((message) => message.is_mine);
+        messagesRef.current = nextMessages;
+        setMessages(nextMessages);
 
-      const wasEmpty = messagesRef.current.length === 0;
-      const oldIds = new Set(messagesRef.current.map((message) => message.message_id));
-      const added = nextMessages.filter((message) => !oldIds.has(message.message_id));
-      const ownAdded = added.some((message) => message.is_mine);
-      messagesRef.current = nextMessages;
-      setMessages(nextMessages);
-
-      if (nearBottomRef.current || forceScrollRef.current || ownAdded || wasEmpty) {
-        forceScrollRef.current = false;
-        setNewMessages(0);
-        window.requestAnimationFrame(() => scrollToBottom("smooth"));
-      } else if (added.length > 0) {
-        setNewMessages((count) => count + added.length);
+        if (nearBottomRef.current || forceScrollRef.current || ownAdded || wasEmpty) {
+          forceScrollRef.current = false;
+          setNewMessages(0);
+          window.requestAnimationFrame(() => scrollToBottom("smooth"));
+        } else if (added.length > 0) {
+          setNewMessages((count) => count + added.length);
+        }
+      } catch (feedError) {
+        if (!quiet)
+          setError(
+            publicErrorMessage(feedError, "Não foi possível abrir as mensagens da Resenha."),
+          );
+      } finally {
+        if (!quiet) setLoadingMessages(false);
       }
-    }
-    if (!quiet) setLoadingMessages(false);
-  }, []);
+    },
+    [user],
+  );
 
   const initialize = useCallback(async () => {
     setLoading(true);
@@ -256,7 +342,7 @@ function Resenha() {
           table: "event_chat_messages",
           filter: `event_id=eq.${selectedId}`,
         },
-        () => void loadMessages(selectedId, true),
+        () => void loadMessages(selectedId, true, true),
       )
       .subscribe();
 
@@ -281,7 +367,7 @@ function Resenha() {
   async function refreshChat() {
     if (!selectedId) return;
     setRefreshing(true);
-    await Promise.all([loadRooms(), loadMessages(selectedId, true)]);
+    await Promise.all([loadRooms(true), loadMessages(selectedId, true, true)]);
     setRefreshing(false);
     toast.success("Resenha atualizada.");
   }
@@ -306,7 +392,7 @@ function Resenha() {
     setDraft("");
     setReplyingTo(null);
     forceScrollRef.current = true;
-    await loadMessages(selectedId, true);
+    await loadMessages(selectedId, true, true);
   }
 
   async function deleteMessage(message: ChatMessage) {
@@ -318,7 +404,7 @@ function Resenha() {
     if (deleteError)
       return toast.error(publicErrorMessage(deleteError, "Não foi possível apagar a mensagem."));
     toast.success(message.is_mine ? "Mensagem apagada." : "Mensagem retirada da Resenha.");
-    await loadMessages(selectedId, true);
+    await loadMessages(selectedId, true, true);
   }
 
   async function blockUser(message: ChatMessage) {
@@ -335,7 +421,7 @@ function Resenha() {
     if (blockError)
       return toast.error(publicErrorMessage(blockError, "Não foi possível bloquear essa pessoa."));
     toast.success("Pessoa bloqueada. Conversas privadas ativas também foram encerradas.");
-    await loadMessages(selectedId, true);
+    await loadMessages(selectedId, true, true);
   }
 
   async function submitReport() {
@@ -609,7 +695,8 @@ function Resenha() {
                               <Link
                                 to="/u/$username"
                                 params={{ username: message.author_username }}
-                                className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-foreground/20 bg-primary text-xs font-black text-white transition-transform hover:scale-105"
+                                preload="intent"
+                                className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-foreground/20 bg-primary text-xs font-black text-white transition-transform hover:scale-105"
                                 aria-label={`Abrir perfil de ${message.author_name}`}
                               >
                                 {message.author_avatar_url ? (
@@ -641,7 +728,8 @@ function Resenha() {
                                 <Link
                                   to="/u/$username"
                                   params={{ username: message.author_username }}
-                                  className="min-w-0 flex-1 rounded-md outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary"
+                                  preload="intent"
+                                  className="bafafa-touch-target inline-flex min-w-0 flex-1 items-center rounded-md outline-none hover:underline focus-visible:ring-2 focus-visible:ring-primary"
                                   aria-label={`Abrir perfil de ${message.author_name}`}
                                 >
                                   <NameWithBadges
@@ -699,7 +787,8 @@ function Resenha() {
                                     <Link
                                       to="/u/$username"
                                       params={{ username: message.author_username }}
-                                      className="grid h-7 w-7 place-items-center rounded-full hover:bg-background hover:text-foreground"
+                                      preload="intent"
+                                      className="grid h-11 w-11 place-items-center rounded-full hover:bg-background hover:text-foreground"
                                       aria-label={`Ver perfil de ${message.author_name}`}
                                       title="Ver perfil"
                                     >
@@ -1163,7 +1252,7 @@ function ResenhaUnavailable({
           to="/inicio"
           className="mt-6 inline-flex items-center gap-2 rounded-xl border-2 border-foreground bg-mango px-5 py-3 text-sm font-black text-foreground shadow-[3px_4px_0_var(--foreground)]"
         >
-          Voltar ao Início
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Início
         </Link>
       </section>
     );

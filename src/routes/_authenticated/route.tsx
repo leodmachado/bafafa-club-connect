@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { inspectPrivilegedSession } from "@/lib/auth-security";
+import { AuthProvider } from "@/hooks/use-auth";
 
 /**
  * Gate autenticado e gate global de 2FA para contas privilegiadas.
@@ -29,5 +30,14 @@ export const Route = createFileRoute("/_authenticated")({
       privileged: security.privileged,
     };
   },
-  component: () => <Outlet />,
+  component: AuthenticatedLayout,
 });
+
+function AuthenticatedLayout() {
+  const { user, roles } = Route.useRouteContext();
+  return (
+    <AuthProvider user={user} roles={roles}>
+      <Outlet />
+    </AuthProvider>
+  );
+}

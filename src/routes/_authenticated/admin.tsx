@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldAlert } from "lucide-react";
+import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { MfaGate } from "@/components/auth/mfa-security";
@@ -27,9 +27,9 @@ function AdminRoute() {
           <div className="mt-6 flex justify-center gap-2">
             <Link
               to="/inicio"
-              className="inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-festa"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-festa"
             >
-              Voltar
+              <ArrowLeft className="h-4 w-4" /> Voltar
             </Link>
             {roles.includes("equipe") && (
               <Link

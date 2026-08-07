@@ -27,6 +27,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { campaignBenefitLabel, formatDateTime } from "@/lib/bafafa";
 import { publicErrorMessage } from "@/lib/public-error";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/mimos")({ component: Fofoquinhas });
 
@@ -81,7 +82,66 @@ type HistoryRow = {
 type TokenResult = { token: string; short_code: string; expires_at: string };
 type Tab = "available" | "missions" | "history";
 
+type FofoquinhasSnapshot = { items: Fofoquinha[]; history: HistoryRow[] };
+const FOFOQUINHAS_CACHE_WINDOW_MS = 15 * 1000;
+const fofoquinhasCache = new Map<
+  string,
+  { value?: FofoquinhasSnapshot; expiresAt: number; request?: Promise<FofoquinhasSnapshot> }
+>();
+
+async function fetchFofoquinhas(): Promise<FofoquinhasSnapshot> {
+  await supabase.rpc("refresh_my_reward_statuses");
+  const [fofoquinhas, rewards] = await Promise.all([
+    supabase.rpc("my_fofoquinhas"),
+    supabase
+      .from("user_rewards")
+      .select(
+        "id,status,expires_at,created_at,campaigns(name,description,benefit_type,discount_percent,fixed_off_cents,product_name)",
+      )
+      .in("status", ["redeemed", "expired", "revoked"])
+      .order("created_at", { ascending: false })
+      .limit(30),
+  ]);
+  const firstError = fofoquinhas.error ?? rewards.error;
+  if (firstError) throw firstError;
+
+  return {
+    items: ((fofoquinhas.data ?? []) as Fofoquinha[]).filter(
+      (item) => item.campaign_kind !== "event" && item.campaign_kind !== "funnel",
+    ),
+    history: (rewards.data ?? []) as unknown as HistoryRow[],
+  };
+}
+
+function loadFofoquinhas(userId: string, force = false): Promise<FofoquinhasSnapshot> {
+  const cached = fofoquinhasCache.get(userId);
+  if (!force && cached?.value && cached.expiresAt > Date.now()) {
+    return Promise.resolve(cached.value);
+  }
+  if (cached?.request) return cached.request;
+
+  const request = fetchFofoquinhas()
+    .then((value) => {
+      fofoquinhasCache.set(userId, {
+        value,
+        expiresAt: Date.now() + FOFOQUINHAS_CACHE_WINDOW_MS,
+      });
+      return value;
+    })
+    .catch((error) => {
+      fofoquinhasCache.delete(userId);
+      throw error;
+    });
+  fofoquinhasCache.set(userId, {
+    value: cached?.value,
+    expiresAt: cached?.expiresAt ?? 0,
+    request,
+  });
+  return request;
+}
+
 function Fofoquinhas() {
+  const { user } = useAuth();
   const [items, setItems] = useState<Fofoquinha[]>([]);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [tab, setTab] = useState<Tab>("available");
@@ -92,36 +152,25 @@ function Fofoquinhas() {
   const [tokenItem, setTokenItem] = useState<Fofoquinha | null>(null);
   const [generating, setGenerating] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    await supabase.rpc("refresh_my_reward_statuses");
-    const [fofoquinhas, rewards] = await Promise.all([
-      supabase.rpc("my_fofoquinhas"),
-      supabase
-        .from("user_rewards")
-        .select(
-          "id,status,expires_at,created_at,campaigns(name,description,benefit_type,discount_percent,fixed_off_cents,product_name)",
-        )
-        .in("status", ["redeemed", "expired", "revoked"])
-        .order("created_at", { ascending: false })
-        .limit(30),
-    ]);
-    const firstError = fofoquinhas.error ?? rewards.error;
-    if (firstError)
-      setError(publicErrorMessage(firstError, "Não foi possível carregar as Fofoquinhas."));
-    else {
-      setItems(
-        ((fofoquinhas.data ?? []) as Fofoquinha[]).filter(
-          (item) => item.campaign_kind !== "event" && item.campaign_kind !== "funnel",
-        ),
-      );
-      setHistory((rewards.data ?? []) as unknown as HistoryRow[]);
-    }
-    setLoading(false);
-  }, []);
+  const load = useCallback(
+    async (force = false) => {
+      if (!user) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const snapshot = await loadFofoquinhas(user.id, force);
+        setItems(snapshot.items);
+        setHistory(snapshot.history);
+      } catch (loadError) {
+        setError(publicErrorMessage(loadError, "Não foi possível carregar as Fofoquinhas."));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user],
+  );
 
-  useEffect(() => void load(), [load]);
+  useEffect(() => void load(false), [load]);
 
   const available = useMemo(
     () => items.filter((item) => item.reward_id && item.reward_status === "available"),
@@ -192,12 +241,17 @@ function Fofoquinhas() {
         eyebrow="Vantagens do clube"
         title="Fofoquinhas"
         tone="green"
+        meta={
+          <>
+            <Gift className="h-3.5 w-3.5" /> Promoções, missões e vantagens do clube
+          </>
+        }
         action={
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={() => void load(true)}
             aria-label="Atualizar"
-            className="grid h-10 w-10 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
+            className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
           >
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -206,7 +260,8 @@ function Fofoquinhas() {
 
       <div className="px-5 pt-2">
         <p className="mb-5 text-sm font-semibold text-muted-foreground">
-          Promoções, missões e vantagens que a gente não consegue guardar em segredo.
+          Aqui, as promoções viram Fofoquinhas: vantagens liberadas, ofertas abertas e missões para
+          ganhar benefícios no Bafafá.
         </p>
         <div className="grid grid-cols-3 gap-2 rounded-2xl border-2 border-foreground/15 bg-muted p-1.5">
           <TabButton
@@ -296,7 +351,7 @@ function Fofoquinhas() {
                           {item.external_button_label || "Abrir site"}
                           <ExternalLink className="h-4 w-4" />
                         </button>
-                        <p className="mt-3 text-xs font-semibold text-foreground/70">
+                        <p className="mt-3 text-xs font-semibold text-foreground/80">
                           Abre no site indicado. Registramos apenas o clique; a confirmação acontece
                           fora do app.
                         </p>

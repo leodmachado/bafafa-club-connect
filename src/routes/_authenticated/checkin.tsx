@@ -41,7 +41,6 @@ function Checkin() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    await supabase.rpc("sync_event_statuses");
     const { data, error: rpcError } = await supabase.rpc("my_house_session");
     if (rpcError) setError(publicErrorMessage(rpcError, "Não foi possível abrir o check-in."));
     else setSession(parseHouseSession(data));
@@ -182,7 +181,7 @@ function Checkin() {
           <Link
             to="/inicio"
             aria-label="Voltar ao Início"
-            className="grid h-10 w-10 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
+            className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>

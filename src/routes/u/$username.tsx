@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   BadgeCheck,
   CalendarDays,
@@ -10,7 +10,7 @@ import {
   Music2,
   TicketCheck,
 } from "lucide-react";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BafafaSign } from "@/components/brand/bafafa-sign";
 import {
   BadgeSticker,
   NameWithBadges,
@@ -37,26 +37,18 @@ type PublicProfile = {
 };
 
 export const Route = createFileRoute("/u/$username")({
+  loader: async ({ params }) => {
+    const { data } = await supabase.rpc("get_public_profile", { _username: params.username });
+    return (data as unknown as PublicProfile | null) ?? null;
+  },
+  staleTime: 60_000,
+  pendingMs: 0,
+  pendingComponent: PublicProfileLoading,
   component: PublicProfilePage,
 });
 
 function PublicProfilePage() {
-  const { username } = Route.useParams();
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    void supabase.rpc("get_public_profile", { _username: username }).then(({ data }) => {
-      if (!mounted) return;
-      setProfile((data as unknown as PublicProfile | null) ?? null);
-      setLoading(false);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [username]);
+  const profile = Route.useLoaderData();
 
   const badges = useMemo(() => dedupeBadgeDefinitions(profile?.badges ?? []), [profile?.badges]);
 
@@ -64,7 +56,7 @@ function PublicProfilePage() {
     <div className="app-canvas min-h-screen px-4 py-6">
       <main className="mx-auto max-w-lg">
         <div className="mb-5 flex items-center justify-between gap-4">
-          <Wordmark variant="short" />
+          <BafafaSign size="compact" />
           <Link
             to="/"
             className="rounded-xl border-2 border-foreground bg-background px-3 py-2 text-xs font-black shadow-[2px_3px_0_var(--foreground)]"
@@ -73,11 +65,7 @@ function PublicProfilePage() {
           </Link>
         </div>
 
-        {loading ? (
-          <div className="card-festa p-8 text-center text-sm font-bold text-muted-foreground">
-            Procurando essa figurinha…
-          </div>
-        ) : !profile ? (
+        {!profile ? (
           <section className="poster-card checker-texture p-6 text-foreground">
             <span className="cut-label bg-white">perfil fechado</span>
             <LockKeyhole className="mt-5 h-8 w-8" />
@@ -91,7 +79,7 @@ function PublicProfilePage() {
         ) : (
           <div className="space-y-4">
             <section className="overflow-hidden rounded-[2rem] border-2 border-foreground/20 bg-card shadow-[0_7px_0_rgba(20,16,40,0.13)]">
-              <div className="brick-texture h-24 border-b-2 border-foreground/15" />
+              <div className="grid-texture h-24 border-b-2 border-foreground/15 bg-electric text-white" />
               <div className="relative px-5 pb-5">
                 <div className="-mt-12 grid h-24 w-24 place-items-center overflow-hidden rounded-full border-[4px] border-foreground bg-primary font-display text-4xl text-primary-foreground shadow-[3px_4px_0_var(--foreground)]">
                   {profile.avatar_url ? (
@@ -234,6 +222,18 @@ function PublicProfilePage() {
             </section>
           </div>
         )}
+      </main>
+    </div>
+  );
+}
+
+function PublicProfileLoading() {
+  return (
+    <div className="app-canvas min-h-screen px-4 py-6">
+      <main className="mx-auto max-w-lg">
+        <div className="card-festa p-8 text-center text-sm font-bold text-muted-foreground">
+          Procurando essa figurinha…
+        </div>
       </main>
     </div>
   );

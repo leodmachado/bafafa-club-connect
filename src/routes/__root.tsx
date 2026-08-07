@@ -13,7 +13,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportClientError } from "../lib/client-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
-import { markPasswordRecovery } from "@/lib/auth-security";
+import { clearAuthSecurityCache, markPasswordRecovery } from "@/lib/auth-security";
 
 function NotFoundComponent() {
   return (
@@ -160,6 +160,7 @@ function RootComponent() {
         event === "USER_UPDATED" ||
         event === "MFA_CHALLENGE_VERIFIED"
       ) {
+        clearAuthSecurityCache();
         router.invalidate();
         if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
       }

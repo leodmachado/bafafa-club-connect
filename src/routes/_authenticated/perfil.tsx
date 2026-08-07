@@ -114,6 +114,103 @@ const emptyPrefs: PreferencesRow = {
   notify_push: false,
 };
 
+type ProfileSnapshot = {
+  profile: ProfileRow;
+  prefs: PreferencesRow;
+  badges: BadgeRow[];
+  titles: TitleRow[];
+  completionDetails: ProfileCompletionDetails;
+  checkins: number;
+};
+
+const PROFILE_CACHE_WINDOW_MS = 20 * 1000;
+const profileCache = new Map<
+  string,
+  { value?: ProfileSnapshot; expiresAt: number; request?: Promise<ProfileSnapshot> }
+>();
+
+async function fetchProfileSnapshot(userId: string): Promise<ProfileSnapshot> {
+  const [
+    profileResult,
+    prefsResult,
+    badgesResult,
+    titlesResult,
+    completenessResult,
+    checkinsResult,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "avatar_url,display_name,username,city,neighborhood,bio,how_found_us,birth_date,whatsapp,phone_verified_at,is_public,show_city,show_checkin_count,show_event_preferences,member_since,active_title_id,gender_identity,gender_custom,pronouns,show_gender",
+      )
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase
+      .from("user_preferences")
+      .select(
+        "event_categories,drink_preferences,food_preferences,marketing_opt_in,notify_in_app,notify_email,notify_whatsapp,notify_push",
+      )
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase
+      .from("user_badges")
+      .select("id,is_featured,is_hidden,awarded_at,badge_definitions(slug,name,description,icon)")
+      .eq("user_id", userId)
+      .order("awarded_at", { ascending: false }),
+    supabase
+      .from("user_titles")
+      .select("title_id,title_definitions(name,description)")
+      .eq("user_id", userId)
+      .order("awarded_at", { ascending: false }),
+    supabase.rpc("my_profile_completion_details"),
+    supabase.from("checkins").select("id", { count: "exact", head: true }).eq("user_id", userId),
+  ]);
+
+  const firstError =
+    profileResult.error ??
+    prefsResult.error ??
+    badgesResult.error ??
+    titlesResult.error ??
+    completenessResult.error ??
+    checkinsResult.error;
+  if (firstError) throw firstError;
+  if (!profileResult.data) {
+    throw new Error("Seu perfil ainda não foi criado. Saia e entre novamente para tentar de novo.");
+  }
+
+  return {
+    profile: profileResult.data as ProfileRow,
+    prefs: (prefsResult.data as PreferencesRow | null) ?? emptyPrefs,
+    badges: (badgesResult.data ?? []) as unknown as BadgeRow[],
+    titles: (titlesResult.data ?? []) as unknown as TitleRow[],
+    completionDetails: parseProfileCompletion(completenessResult.data),
+    checkins: checkinsResult.count ?? 0,
+  };
+}
+
+function getProfileSnapshot(userId: string, force = false): Promise<ProfileSnapshot> {
+  const cached = profileCache.get(userId);
+  if (!force && cached?.value && cached.expiresAt > Date.now()) {
+    return Promise.resolve(cached.value);
+  }
+  if (cached?.request) return cached.request;
+
+  const request = fetchProfileSnapshot(userId)
+    .then((value) => {
+      profileCache.set(userId, {
+        value,
+        expiresAt: Date.now() + PROFILE_CACHE_WINDOW_MS,
+      });
+      return value;
+    })
+    .catch((error) => {
+      profileCache.delete(userId);
+      throw error;
+    });
+  profileCache.set(userId, { value: cached?.value, expiresAt: cached?.expiresAt ?? 0, request });
+  return request;
+}
+
 function Perfil() {
   const { user, roles } = useAuth();
   const navigate = useNavigate();
@@ -131,74 +228,27 @@ function Perfil() {
   const [avatarSelection, setAvatarSelection] = useState<File | null | undefined>(undefined);
   const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
 
-  const loadProfile = useCallback(async () => {
-    if (!user) return;
-    setLoadingProfile(true);
-    setLoadError(null);
-
-    const [
-      profileResult,
-      prefsResult,
-      badgesResult,
-      titlesResult,
-      completenessResult,
-      checkinsResult,
-    ] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          "avatar_url,display_name,username,city,neighborhood,bio,how_found_us,birth_date,whatsapp,phone_verified_at,is_public,show_city,show_checkin_count,show_event_preferences,member_since,active_title_id,gender_identity,gender_custom,pronouns,show_gender",
-        )
-        .eq("id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("user_preferences")
-        .select(
-          "event_categories,drink_preferences,food_preferences,marketing_opt_in,notify_in_app,notify_email,notify_whatsapp,notify_push",
-        )
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("user_badges")
-        .select("id,is_featured,is_hidden,awarded_at,badge_definitions(slug,name,description,icon)")
-        .eq("user_id", user.id)
-        .order("awarded_at", { ascending: false }),
-      supabase
-        .from("user_titles")
-        .select("title_id,title_definitions(name,description)")
-        .eq("user_id", user.id)
-        .order("awarded_at", { ascending: false }),
-      supabase.rpc("my_profile_completion_details"),
-      supabase.from("checkins").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-    ]);
-
-    const firstError =
-      profileResult.error ??
-      prefsResult.error ??
-      badgesResult.error ??
-      titlesResult.error ??
-      completenessResult.error ??
-      checkinsResult.error;
-
-    if (firstError) {
-      setLoadError(firstError.message);
-      setLoadingProfile(false);
-      return;
-    }
-    if (!profileResult.data) {
-      setLoadError("Seu perfil ainda não foi criado. Saia e entre novamente para tentar de novo.");
-      setLoadingProfile(false);
-      return;
-    }
-
-    setProfile(profileResult.data as ProfileRow);
-    setPrefs((prefsResult.data as PreferencesRow | null) ?? emptyPrefs);
-    setBadges((badgesResult.data ?? []) as unknown as BadgeRow[]);
-    setTitles((titlesResult.data ?? []) as unknown as TitleRow[]);
-    setCompletionDetails(parseProfileCompletion(completenessResult.data));
-    setCheckins(checkinsResult.count ?? 0);
-    setLoadingProfile(false);
-  }, [user]);
+  const loadProfile = useCallback(
+    async (force = false) => {
+      if (!user) return;
+      setLoadingProfile(true);
+      setLoadError(null);
+      try {
+        const snapshot = await getProfileSnapshot(user.id, force);
+        setProfile(snapshot.profile);
+        setPrefs(snapshot.prefs);
+        setBadges(snapshot.badges);
+        setTitles(snapshot.titles);
+        setCompletionDetails(snapshot.completionDetails);
+        setCheckins(snapshot.checkins);
+      } catch (error) {
+        setLoadError(publicErrorMessage(error, "Não foi possível carregar seu perfil."));
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     void loadProfile();
@@ -293,6 +343,7 @@ function Perfil() {
 
       setProfile({ ...profile, avatar_url: avatarUrl });
       setAvatarSelection(undefined);
+      profileCache.delete(user.id);
 
       const [badgesResult, titlesResult, completenessResult] = await Promise.all([
         supabase
@@ -350,6 +401,13 @@ function Perfil() {
     );
   }
 
+  function focusPublicProfileSetup() {
+    const key = profile?.username ? "public-profile-privacy" : "username";
+    const target = document.querySelector<HTMLElement>(`[data-profile-key="${key}"]`);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => target?.querySelector<HTMLElement>("input, button")?.focus(), 450);
+  }
+
   const completeness = completionDetails.percentage;
   const nextTask = nextProfileTask(completionDetails);
   const canValidate = roles.some((role) => role === "admin" || role === "equipe");
@@ -378,11 +436,16 @@ function Perfil() {
         eyebrow="Sua carteirinha"
         title="Carteirinha"
         tone="blue"
+        meta={
+          <>
+            <UserRound className="h-3.5 w-3.5" /> Seu perfil, selos e história no Bafafá
+          </>
+        }
         action={
           <button
             onClick={handleSignOut}
             aria-label="Sair"
-            className="grid h-10 w-10 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
+            className="bafafa-touch-target grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -396,7 +459,7 @@ function Perfil() {
           <div className="px-5">
             <button
               type="button"
-              onClick={() => void loadProfile()}
+              onClick={() => void loadProfile(true)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-primary px-4 py-3 text-sm font-black text-primary-foreground shadow-[3px_4px_0_var(--foreground)]"
             >
               <RefreshCw className="h-4 w-4" /> Tentar novamente
@@ -433,15 +496,24 @@ function Perfil() {
                     {profile?.username ? `@${profile.username}` : "Escolha seu @ no perfil"}
                   </p>
                 </div>
-                {profile?.username && profile.is_public && (
+                {profile?.username && profile.is_public ? (
                   <Link
                     to="/u/$username"
                     params={{ username: profile.username }}
+                    preload="intent"
                     aria-label="Abrir perfil público"
-                    className="mt-3 grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-foreground/30 bg-mango text-foreground"
+                    className="bafafa-touch-target mt-3 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-foreground/30 bg-mango px-3 py-2 text-xs font-black text-foreground"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4" /> Ver perfil
                   </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={focusPublicProfileSetup}
+                    className="bafafa-touch-target mt-3 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-white/40 bg-white/15 px-3 py-2 text-xs font-black text-white"
+                  >
+                    <Eye className="h-4 w-4" /> Configurar perfil
+                  </button>
                 )}
               </div>
 
@@ -738,7 +810,10 @@ function Perfil() {
                   </label>
                 )}
 
-                <div className="profile-subpanel profile-subpanel--privacy space-y-3 p-4 text-sm">
+                <div
+                  data-profile-key="public-profile-privacy"
+                  className="profile-subpanel profile-subpanel--privacy space-y-3 p-4 text-sm"
+                >
                   <div>
                     <p className="font-black">Privacidade do perfil público</p>
                     <p className="mt-1 text-xs font-semibold text-muted-foreground">
@@ -838,7 +913,7 @@ function Perfil() {
               <button
                 type="button"
                 onClick={() => setBlockedUsersOpen(true)}
-                className="shrink-0 rounded-full border-2 border-foreground bg-background px-3 py-2 text-xs font-black shadow-[2px_2px_0_var(--foreground)]"
+                className="bafafa-touch-target shrink-0 rounded-full border-2 border-foreground bg-background px-3 py-2 text-xs font-black shadow-[2px_2px_0_var(--foreground)]"
               >
                 Gerenciar
               </button>
@@ -941,7 +1016,7 @@ function PreferenceGroup({
               key={option}
               type="button"
               onClick={() => onToggle(option)}
-              className={`rounded-full border-2 px-3 py-2 text-xs font-black transition ${
+              className={`bafafa-touch-target min-h-11 rounded-full border-2 px-3 py-2 text-xs font-black transition ${
                 active
                   ? `${colors[index % colors.length]} border-foreground shadow-[2px_2px_0_var(--foreground)]`
                   : "border-foreground/15 bg-background text-muted-foreground"

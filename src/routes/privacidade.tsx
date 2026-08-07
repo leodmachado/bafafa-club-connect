@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
@@ -10,27 +10,37 @@ import {
   MessageCircleMore,
   ShieldCheck,
 } from "lucide-react";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BafafaSign } from "@/components/brand/bafafa-sign";
 
 export const Route = createFileRoute("/privacidade")({
   component: PrivacyPage,
 });
 
 function PrivacyPage() {
+  const navigate = useNavigate();
+
+  function goBack() {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    void navigate({ to: "/" });
+  }
+
   return (
     <main className="app-canvas min-h-screen px-4 py-6 text-foreground">
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between gap-4">
           <Link to="/" className="inline-block" aria-label="Voltar ao Início">
-            <Wordmark variant="full" />
+            <BafafaSign size="full" showCaption />
           </Link>
-          <Link
-            to="/auth"
-            search={{ mode: "signup" }}
+          <button
+            type="button"
+            onClick={goBack}
             className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-foreground bg-background px-4 text-sm font-black shadow-[2px_3px_0_var(--foreground)]"
           >
             <ArrowLeft className="h-4 w-4" /> Voltar
-          </Link>
+          </button>
         </div>
 
         <header className="content-card content-card--profile mt-6 p-6 text-white">

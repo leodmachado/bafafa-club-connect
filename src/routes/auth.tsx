@@ -4,6 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   Check,
+  ArrowLeft,
   Circle,
   Eye,
   EyeOff,
@@ -14,7 +15,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BafafaSign } from "@/components/brand/bafafa-sign";
 import { TurnstileChallenge, useAuthCaptcha } from "@/components/auth/turnstile";
 import { friendlyAuthError, isPrivilegedRole, validatePassword } from "@/lib/auth-security";
 import { formatPhoneBR, normalizePhoneE164BR } from "@/lib/commercial";
@@ -86,8 +87,8 @@ function AuthPage() {
     <main className="app-canvas min-h-screen px-4 py-5 sm:py-7">
       <div className="mx-auto max-w-lg">
         <header className="flex items-center justify-between gap-4">
-          <Link to="/" className="inline-flex max-w-[190px]">
-            <Wordmark variant="full" />
+          <Link to="/" className="inline-flex max-w-[200px]" aria-label="Voltar ao início">
+            <BafafaSign size="full" showCaption />
           </Link>
           <span className="rounded-full border border-foreground/15 bg-card px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.17em] text-muted-foreground">
             Clube do Bafafã
@@ -136,7 +137,7 @@ function AuthPage() {
               <p className="font-black">No acesso por telefone não existe senha.</p>
               <p className="text-muted-foreground">Volte para Entrar e peça um novo código.</p>
               <button type="button" className={secondaryButton} onClick={() => setMode("signin")}>
-                Voltar
+                <ArrowLeft className="h-4 w-4" /> Voltar
               </button>
             </div>
           )}
@@ -155,7 +156,15 @@ function AuthPage() {
   );
 }
 
-function ChannelButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+function ChannelButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
   return (
     <button
       type="button"
@@ -276,15 +285,20 @@ function PhoneSignupForm() {
     const normalized = normalizePhoneE164BR(phone);
     if (!/^\+55\d{10,11}$/.test(normalized)) return toast.error("Informe um telefone com DDD.");
     if (formData.firstName.trim().length < 2) return toast.error("Diz teu nome pra gente.");
-    if (!isAdultBirthDate(birthDate)) return toast.error("O clube é exclusivo para maiores de 18 anos.");
+    if (!isAdultBirthDate(birthDate))
+      return toast.error("O clube é exclusivo para maiores de 18 anos.");
     if (!formData.confirmAdult) return toast.error("Confirme que você tem 18 anos ou mais.");
     if (!formData.acceptTerms) return toast.error("Aceite os Termos de Uso para continuar.");
-    if (!formData.acceptPrivacy) return toast.error("Aceite a Política de Privacidade para continuar.");
-    if (!formData.acceptCommunity) return toast.error("Aceite as regras da comunidade para continuar.");
+    if (!formData.acceptPrivacy)
+      return toast.error("Aceite a Política de Privacidade para continuar.");
+    if (!formData.acceptCommunity)
+      return toast.error("Aceite as regras da comunidade para continuar.");
     if (captcha.required && !captcha.token) return toast.error("Confirme o desafio de segurança.");
 
     setLoading(true);
-    const displayName = [formData.firstName.trim(), formData.lastName.trim()].filter(Boolean).join(" ");
+    const displayName = [formData.firstName.trim(), formData.lastName.trim()]
+      .filter(Boolean)
+      .join(" ");
     const moderationStatus = await checkCommunityContent(displayName, "display_name");
     if (moderationStatus === "blocked") {
       setLoading(false);
@@ -364,7 +378,9 @@ function PhoneSignupForm() {
         <Field label="Nome" hint="Pode ser o nome que você usa no dia a dia.">
           <input
             value={formData.firstName}
-            onChange={(event) => setFormData((current) => ({ ...current, firstName: event.target.value }))}
+            onChange={(event) =>
+              setFormData((current) => ({ ...current, firstName: event.target.value }))
+            }
             required
             className={inputCls}
             autoComplete="given-name"
@@ -373,7 +389,9 @@ function PhoneSignupForm() {
         <Field label="Sobrenome">
           <input
             value={formData.lastName}
-            onChange={(event) => setFormData((current) => ({ ...current, lastName: event.target.value }))}
+            onChange={(event) =>
+              setFormData((current) => ({ ...current, lastName: event.target.value }))
+            }
             className={inputCls}
             autoComplete="family-name"
           />
@@ -413,7 +431,9 @@ function PhoneSignupForm() {
         />
         <LegalConsent
           checked={formData.acceptCommunity}
-          onChange={(checked) => setFormData((current) => ({ ...current, acceptCommunity: checked }))}
+          onChange={(checked) =>
+            setFormData((current) => ({ ...current, acceptCommunity: checked }))
+          }
           prefix="Li e aceito as"
           text="Regras da Comunidade"
           hash="comunidade"
@@ -516,10 +536,21 @@ function EmailSignupForm({ onDone }: { onDone: () => void }) {
         Crie sua conta com e-mail. Mostramos cada requisito da senha enquanto você digita.
       </p>
       <Field label="Como te chamamos?" hint="Seu nome ou apelido." error={errors.display_name}>
-        <input name="display_name" required className={inputCls} placeholder="Seu nome ou apelido" />
+        <input
+          name="display_name"
+          required
+          className={inputCls}
+          placeholder="Seu nome ou apelido"
+        />
       </Field>
       <Field label="E-mail" error={errors.email}>
-        <input name="email" type="email" required className={inputCls} placeholder="voce@email.com" />
+        <input
+          name="email"
+          type="email"
+          required
+          className={inputCls}
+          placeholder="voce@email.com"
+        />
       </Field>
       <PasswordField
         label="Crie uma senha"
@@ -540,11 +571,36 @@ function EmailSignupForm({ onDone }: { onDone: () => void }) {
       />
       <BirthDateSelect value={birthDate} onChange={setBirthDate} error={errors.birth_date} />
       <ConsentBox>
-        <Consent name="is_over_18" error={errors.is_over_18} label="Confirmo que tenho 18 anos ou mais." />
-        <LegalConsentUncontrolled name="accept_terms" error={errors.accept_terms} prefix="Li e aceito os" text="Termos de Uso" hash="termos" />
-        <LegalConsentUncontrolled name="accept_privacy" error={errors.accept_privacy} prefix="Li e aceito a" text="Política de Privacidade" hash="privacidade" />
-        <LegalConsentUncontrolled name="accept_community" error={errors.accept_community} prefix="Li e aceito as" text="Regras da Comunidade" hash="comunidade" />
-        <Consent name="marketing_opt_in" label="Quero receber promoções e novidades do Bafafá. (Opcional)" />
+        <Consent
+          name="is_over_18"
+          error={errors.is_over_18}
+          label="Confirmo que tenho 18 anos ou mais."
+        />
+        <LegalConsentUncontrolled
+          name="accept_terms"
+          error={errors.accept_terms}
+          prefix="Li e aceito os"
+          text="Termos de Uso"
+          hash="termos"
+        />
+        <LegalConsentUncontrolled
+          name="accept_privacy"
+          error={errors.accept_privacy}
+          prefix="Li e aceito a"
+          text="Política de Privacidade"
+          hash="privacidade"
+        />
+        <LegalConsentUncontrolled
+          name="accept_community"
+          error={errors.accept_community}
+          prefix="Li e aceito as"
+          text="Regras da Comunidade"
+          hash="comunidade"
+        />
+        <Consent
+          name="marketing_opt_in"
+          label="Quero receber promoções e novidades do Bafafá. (Opcional)"
+        />
       </ConsentBox>
       <TurnstileChallenge onToken={captcha.onToken} resetKey={captcha.resetKey} />
       {errors.captcha && <p className="text-xs font-semibold text-destructive">{errors.captcha}</p>}
@@ -580,7 +636,8 @@ function EmailSigninForm({ onForgot }: { onForgot: () => void }) {
         supabase.from("user_roles").select("role").eq("user_id", userId),
         supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
       ]);
-      needsSecurity = isPrivilegedRole((roles ?? []).map((row) => row.role)) && aal?.currentLevel !== "aal2";
+      needsSecurity =
+        isPrivilegedRole((roles ?? []).map((row) => row.role)) && aal?.currentLevel !== "aal2";
     }
     toast.success("Bem-vindo, Bafafã!");
     navigate({ to: needsSecurity ? "/seguranca" : "/inicio" });
@@ -591,7 +648,11 @@ function EmailSigninForm({ onForgot }: { onForgot: () => void }) {
       <Field label="E-mail">
         <input name="email" type="email" autoComplete="email" required className={inputCls} />
       </Field>
-      <PasswordInput name="password" show={showPassword} onToggle={() => setShowPassword((current) => !current)} />
+      <PasswordInput
+        name="password"
+        show={showPassword}
+        onToggle={() => setShowPassword((current) => !current)}
+      />
       <TurnstileChallenge onToken={captcha.onToken} resetKey={captcha.resetKey} />
       <SubmitButton loading={loading}>Entrar</SubmitButton>
       <button type="button" onClick={onForgot} className={textButton}>
@@ -634,38 +695,119 @@ function ResetForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function BirthDateSelect({ value, onChange, error }: { value: string; onChange: (value: string) => void; error?: string }) {
-  const [year = "", month = "", day = ""] = value ? value.split("-") : [];
+function BirthDateSelect({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}) {
+  const initialParts = useMemo(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return { year: "", month: "", day: "" };
+    const [year, month, day] = value.split("-");
+    return { year, month, day };
+  }, [value]);
+  const [year, setYear] = useState(initialParts.year);
+  const [month, setMonth] = useState(initialParts.month);
+  const [day, setDay] = useState(initialParts.day);
+
+  useEffect(() => {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    const [nextYear, nextMonth, nextDay] = value.split("-");
+    setYear(nextYear);
+    setMonth(nextMonth);
+    setDay(nextDay);
+  }, [value]);
+
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
     return Array.from({ length: 83 }, (_, index) => String(currentYear - 18 - index));
   }, []);
   const daysInMonth = year && month ? new Date(Number(year), Number(month), 0).getDate() : 31;
-  const days = Array.from({ length: daysInMonth }, (_, index) => String(index + 1).padStart(2, "0"));
+  const days = Array.from({ length: daysInMonth }, (_, index) =>
+    String(index + 1).padStart(2, "0"),
+  );
 
-  function update(part: "day" | "month" | "year", next: string) {
-    const parts = { day, month, year, [part]: next };
-    onChange(parts.year && parts.month && parts.day ? `${parts.year}-${parts.month}-${parts.day}` : "");
+  function publish(nextYear: string, nextMonth: string, nextDay: string) {
+    if (nextYear && nextMonth && nextDay) {
+      onChange(`${nextYear}-${nextMonth}-${nextDay}`);
+    } else {
+      onChange("");
+    }
+  }
+
+  function updateYear(nextYear: string) {
+    setYear(nextYear);
+    const nextDaysInMonth =
+      nextYear && month ? new Date(Number(nextYear), Number(month), 0).getDate() : 31;
+    const nextDay = day && Number(day) <= nextDaysInMonth ? day : "";
+    setDay(nextDay);
+    publish(nextYear, month, nextDay);
+  }
+
+  function updateMonth(nextMonth: string) {
+    setMonth(nextMonth);
+    const nextDaysInMonth =
+      year && nextMonth ? new Date(Number(year), Number(nextMonth), 0).getDate() : 31;
+    const nextDay = day && Number(day) <= nextDaysInMonth ? day : "";
+    setDay(nextDay);
+    publish(year, nextMonth, nextDay);
+  }
+
+  function updateDay(nextDay: string) {
+    setDay(nextDay);
+    publish(year, month, nextDay);
   }
 
   return (
     <fieldset>
       <legend className="mb-1 text-sm font-semibold">Data de nascimento</legend>
-      <div className="grid grid-cols-[0.8fr_1.25fr_1fr] gap-2">
-        <select value={day} onChange={(event) => update("day", event.target.value)} className={selectCls} aria-label="Dia de nascimento">
+      <div className="grid grid-cols-[0.8fr_1.2fr_1fr] gap-2">
+        <select
+          value={day}
+          onChange={(event) => updateDay(event.target.value)}
+          className={selectCls}
+          aria-label="Dia de nascimento"
+        >
           <option value="">Dia</option>
-          {days.map((item) => <option key={item} value={item}>{Number(item)}</option>)}
+          {days.map((item) => (
+            <option key={item} value={item}>
+              {Number(item)}
+            </option>
+          ))}
         </select>
-        <select value={month} onChange={(event) => update("month", event.target.value)} className={selectCls} aria-label="Mês de nascimento">
+        <select
+          value={month}
+          onChange={(event) => updateMonth(event.target.value)}
+          className={selectCls}
+          aria-label="Mês de nascimento"
+        >
           <option value="">Mês</option>
-          {MONTHS.map((item, index) => <option key={item} value={String(index + 1).padStart(2, "0")}>{item}</option>)}
+          {MONTHS.map((item, index) => (
+            <option key={item} value={String(index + 1).padStart(2, "0")}>
+              {item}
+            </option>
+          ))}
         </select>
-        <select value={year} onChange={(event) => update("year", event.target.value)} className={selectCls} aria-label="Ano de nascimento">
+        <select
+          value={year}
+          onChange={(event) => updateYear(event.target.value)}
+          className={selectCls}
+          aria-label="Ano de nascimento"
+        >
           <option value="">Ano</option>
-          {years.map((item) => <option key={item} value={item}>{item}</option>)}
+          {years.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
         </select>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">Escolha primeiro o ano, depois o mês e o dia.</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Escolha na ordem brasileira: dia, mês e ano (DD/MM/AAAA).
+      </p>
       {error && <p className="mt-1 text-xs font-semibold text-destructive">{error}</p>}
     </fieldset>
   );
@@ -678,15 +820,23 @@ function PasswordChecklist({ password }: { password: string }) {
     [/[a-záàâãéèêíïóôõöúçñ]/.test(password), "uma letra minúscula"],
     [/\d/.test(password), "um número"],
     [/[^A-Za-zÀ-ÿ0-9]/.test(password), "um símbolo"],
-    [password.length > 0 && !/password|senha|123456|qwerty|bafafa/i.test(password), "sem palavras ou sequências fáceis"],
+    [
+      password.length > 0 && !/password|senha|123456|qwerty|bafafa/i.test(password),
+      "sem palavras ou sequências fáceis",
+    ],
   ] as const;
 
   return (
     <div className="rounded-2xl border border-foreground/10 bg-muted/60 p-3">
-      <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">Sua senha precisa ter</p>
+      <p className="text-xs font-black uppercase tracking-wide text-muted-foreground">
+        Sua senha precisa ter
+      </p>
       <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
         {rules.map(([valid, label]) => (
-          <div key={label} className={`flex items-center gap-2 text-xs font-semibold ${valid ? "text-primary" : "text-muted-foreground"}`}>
+          <div
+            key={label}
+            className={`flex items-center gap-2 text-xs font-semibold ${valid ? "text-primary" : "text-muted-foreground"}`}
+          >
             {valid ? <Check className="h-4 w-4" /> : <Circle className="h-3.5 w-3.5" />}
             {label}
           </div>
@@ -696,22 +846,57 @@ function PasswordChecklist({ password }: { password: string }) {
   );
 }
 
-function PasswordField({ label, value, onChange, show, onToggle, error }: { label: string; value: string; onChange: (value: string) => void; show: boolean; onToggle: () => void; error?: string }) {
+function PasswordField({
+  label,
+  value,
+  onChange,
+  show,
+  onToggle,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  error?: string;
+}) {
   return (
     <Field label={label} error={error}>
       <div className="relative">
-        <input value={value} onChange={(event) => onChange(event.target.value)} type={show ? "text" : "password"} autoComplete="new-password" required className={`${inputCls} pr-12`} />
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          type={show ? "text" : "password"}
+          autoComplete="new-password"
+          required
+          className={`${inputCls} pr-12`}
+        />
         <EyeButton show={show} onToggle={onToggle} />
       </div>
     </Field>
   );
 }
 
-function PasswordInput({ name, show, onToggle }: { name: string; show: boolean; onToggle: () => void }) {
+function PasswordInput({
+  name,
+  show,
+  onToggle,
+}: {
+  name: string;
+  show: boolean;
+  onToggle: () => void;
+}) {
   return (
     <Field label="Senha">
       <div className="relative">
-        <input name={name} type={show ? "text" : "password"} autoComplete="current-password" required className={`${inputCls} pr-12`} />
+        <input
+          name={name}
+          type={show ? "text" : "password"}
+          autoComplete="current-password"
+          required
+          className={`${inputCls} pr-12`}
+        />
         <EyeButton show={show} onToggle={onToggle} />
       </div>
     </Field>
@@ -720,28 +905,81 @@ function PasswordInput({ name, show, onToggle }: { name: string; show: boolean; 
 
 function EyeButton({ show, onToggle }: { show: boolean; onToggle: () => void }) {
   return (
-    <button type="button" onClick={onToggle} aria-label={show ? "Ocultar senha" : "Mostrar senha"} className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+      className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+    >
       {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
     </button>
   );
 }
 
-function LegalConsent({ checked, onChange, prefix, text, hash }: { checked: boolean; onChange: (checked: boolean) => void; prefix: string; text: string; hash: string }) {
+function LegalConsent({
+  checked,
+  onChange,
+  prefix,
+  text,
+  hash,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  prefix: string;
+  text: string;
+  hash: string;
+}) {
   return (
     <ConsentControl
       checked={checked}
       onChange={onChange}
-      label={<>{prefix} <Link to="/privacidade" hash={hash} target="_blank" className="font-black underline decoration-2 underline-offset-2">{text}</Link>.</>}
+      label={
+        <>
+          {prefix}{" "}
+          <Link
+            to="/privacidade"
+            hash={hash}
+            target="_blank"
+            className="font-black underline decoration-2 underline-offset-2"
+          >
+            {text}
+          </Link>
+          .
+        </>
+      }
     />
   );
 }
 
-function LegalConsentUncontrolled({ name, error, prefix, text, hash }: { name: string; error?: string; prefix: string; text: string; hash: string }) {
+function LegalConsentUncontrolled({
+  name,
+  error,
+  prefix,
+  text,
+  hash,
+}: {
+  name: string;
+  error?: string;
+  prefix: string;
+  text: string;
+  hash: string;
+}) {
   return (
     <div>
       <label className="flex items-start gap-3">
         <input name={name} type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-primary" />
-        <span className="text-sm">{prefix} <Link to="/privacidade" hash={hash} target="_blank" className="font-black underline decoration-2 underline-offset-2">{text}</Link>.</span>
+        <span className="text-sm">
+          {prefix}{" "}
+          <Link
+            to="/privacidade"
+            hash={hash}
+            target="_blank"
+            className="font-black underline decoration-2 underline-offset-2"
+          >
+            {text}
+          </Link>
+          .
+        </span>
       </label>
       {error && <span className="ml-8 block text-xs text-destructive">{error}</span>}
     </div>
@@ -760,10 +998,23 @@ function Consent({ name, label, error }: { name: string; label: string; error?: 
   );
 }
 
-function ConsentControl({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: ReactNode }) {
+function ConsentControl({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: ReactNode;
+}) {
   return (
     <label className="flex items-start gap-3">
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary" />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-0.5 h-5 w-5 shrink-0 accent-primary"
+      />
       <span className="text-sm">{label}</span>
     </label>
   );
@@ -773,7 +1024,17 @@ function ConsentBox({ children }: { children: ReactNode }) {
   return <div className="space-y-3 rounded-2xl bg-muted p-4 text-sm">{children}</div>;
 }
 
-function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {
+function Field({
+  label,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  children: ReactNode;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-semibold">{label}</span>
@@ -784,10 +1045,21 @@ function Field({ label, hint, error, children }: { label: string; hint?: string;
   );
 }
 
-function InfoBox({ icon, title, children }: { icon?: ReactNode; title: string; children: ReactNode }) {
+function InfoBox({
+  icon,
+  title,
+  children,
+}: {
+  icon?: ReactNode;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <div className="rounded-2xl bg-mango/35 p-4 text-sm">
-      <p className="flex items-center gap-2 font-black">{icon}{title}</p>
+      <p className="flex items-center gap-2 font-black">
+        {icon}
+        {title}
+      </p>
       <p className="mt-1 text-muted-foreground">{children}</p>
     </div>
   );
@@ -805,15 +1077,21 @@ function isAdultBirthDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
   const birth = new Date(year, month - 1, day);
-  if (birth.getFullYear() !== year || birth.getMonth() !== month - 1 || birth.getDate() !== day) return false;
+  if (birth.getFullYear() !== year || birth.getMonth() !== month - 1 || birth.getDate() !== day)
+    return false;
   const today = new Date();
   const cutoff = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
   return birth <= cutoff;
 }
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-const inputCls = "w-full min-h-12 rounded-xl border-2 border-foreground/20 bg-surface px-4 py-3 text-base font-semibold outline-none transition focus:border-electric focus:ring-4 focus:ring-lagoa/20";
-const selectCls = "w-full min-h-12 rounded-xl border-2 border-foreground/20 bg-surface px-2 py-3 text-base font-bold outline-none focus:border-electric focus:ring-4 focus:ring-lagoa/20";
-const primaryButton = "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-primary px-4 py-3 text-base font-black text-primary-foreground shadow-[3px_4px_0_var(--foreground)] disabled:cursor-not-allowed disabled:opacity-60";
-const secondaryButton = "inline-flex min-h-12 w-full items-center justify-center rounded-xl border-2 border-foreground px-4 py-3 font-black";
-const textButton = "w-full min-h-11 py-2 text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline";
+const inputCls =
+  "w-full min-h-12 rounded-xl border-2 border-foreground/20 bg-surface px-4 py-3 text-base font-semibold outline-none transition focus:border-electric focus:ring-4 focus:ring-lagoa/20";
+const selectCls =
+  "w-full min-h-12 rounded-xl border-2 border-foreground/20 bg-surface px-2 py-3 text-base font-bold outline-none focus:border-electric focus:ring-4 focus:ring-lagoa/20";
+const primaryButton =
+  "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-foreground bg-primary px-4 py-3 text-base font-black text-primary-foreground shadow-[3px_4px_0_var(--foreground)] disabled:cursor-not-allowed disabled:opacity-60";
+const secondaryButton =
+  "inline-flex min-h-12 w-full items-center justify-center rounded-xl border-2 border-foreground px-4 py-3 font-black";
+const textButton =
+  "w-full min-h-11 py-2 text-sm font-semibold text-muted-foreground underline-offset-4 hover:underline";

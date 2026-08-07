@@ -18,7 +18,7 @@ function SecurityRoute() {
           <Link
             to="/perfil"
             aria-label="Voltar ao perfil"
-            className="grid h-10 w-10 place-items-center rounded-full border-2 border-foreground bg-background shadow-[2px_3px_0_var(--foreground)]"
+            className="grid h-11 w-11 place-items-center rounded-full border-2 border-foreground bg-background text-foreground shadow-[2px_3px_0_var(--foreground)]"
           >
             <ChevronLeft className="h-4 w-4" />
           </Link>

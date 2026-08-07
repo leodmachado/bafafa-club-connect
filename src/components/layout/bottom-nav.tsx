@@ -8,7 +8,7 @@ const items = [
     to: "/mimos",
     label: "Fofoquinhas",
     icon: Sparkles,
-    active: "bg-secondary text-foreground",
+    active: "bg-primary text-primary-foreground",
   },
   {
     to: "/resenha",

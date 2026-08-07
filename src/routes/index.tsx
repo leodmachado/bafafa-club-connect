@@ -1,6 +1,6 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { MapPin, MessageCircleMore, Sparkles } from "lucide-react";
-import { Wordmark } from "@/components/brand/wordmark";
+import { BafafaSign } from "@/components/brand/bafafa-sign";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
@@ -15,7 +15,11 @@ export const Route = createFileRoute("/")({
 const HIGHLIGHTS = [
   { icon: MapPin, label: "Check-in pelo celular", tone: "bg-primary text-primary-foreground" },
   { icon: Sparkles, label: "Fofoquinhas e benefícios", tone: "bg-mango text-mango-foreground" },
-  { icon: MessageCircleMore, label: "Resenha da comunidade", tone: "bg-samba text-samba-foreground" },
+  {
+    icon: MessageCircleMore,
+    label: "Resenha da comunidade",
+    tone: "bg-samba text-samba-foreground",
+  },
 ];
 
 function LandingPage() {
@@ -25,9 +29,7 @@ function LandingPage() {
       <div className="pointer-events-none absolute -bottom-20 -left-24 h-56 w-56 rounded-full bg-lagoa/20 blur-3xl" />
 
       <header className="relative flex justify-center">
-        <div className="inline-flex rotate-[-1deg] items-center rounded-2xl border-2 border-foreground bg-primary px-5 py-3 text-primary-foreground shadow-[3px_4px_0_var(--foreground)]">
-          <Wordmark tone="white" />
-        </div>
+        <BafafaSign size="full" />
       </header>
 
       <section className="relative flex flex-1 flex-col justify-center py-7 sm:py-10">
@@ -82,11 +84,19 @@ function LandingPage() {
             Termos
           </Link>
           <span aria-hidden> · </span>
-          <Link to="/privacidade" hash="privacidade" className="font-bold underline underline-offset-4">
+          <Link
+            to="/privacidade"
+            hash="privacidade"
+            className="font-bold underline underline-offset-4"
+          >
             Privacidade
           </Link>
           <span aria-hidden> · </span>
-          <Link to="/privacidade" hash="comunidade" className="font-bold underline underline-offset-4">
+          <Link
+            to="/privacidade"
+            hash="comunidade"
+            className="font-bold underline underline-offset-4"
+          >
             Regras da Comunidade
           </Link>
         </p>

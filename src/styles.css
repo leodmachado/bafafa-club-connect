@@ -4,6 +4,18 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Medidas e contraste críticos não dependem da cascata temática. */
+.bafafa-touch-target {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+.badge-overflow-count {
+  border-color: #16122b !important;
+  background-color: #fff8e9 !important;
+  color: #16122b !important;
+}
+
 /* =====================================================================
  * BAFAFÁ — Clube dos Bafafãs :: Identidade visual 2026
  * ---------------------------------------------------------------------
@@ -520,8 +532,8 @@
 
   .bafafa-icon-button {
     display: grid;
-    width: 2.55rem;
-    height: 2.55rem;
+    width: 2.75rem;
+    height: 2.75rem;
     place-items: center;
     border: 2px solid var(--foreground);
     border-radius: 999px;
@@ -817,6 +829,24 @@
   }
   .bafafa-sign__nail--right {
     right: 0.62rem;
+  }
+
+  .bafafa-sign--compact {
+    width: min(7.25rem, 32vw);
+    min-height: 3.7rem;
+    padding: 0.6rem 0.75rem 0.5rem;
+    border-radius: 1rem 0.8rem 1.05rem 0.75rem;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.96),
+      inset 0 -4px 0 rgba(237, 76, 23, 0.12),
+      2px 3px 0 var(--foreground),
+      5px 6px 0 var(--brick);
+  }
+
+  .bafafa-sign--full {
+    width: min(10.75rem, 46vw);
+    min-height: 5.25rem;
+    padding: 0.8rem 1rem 0.7rem;
   }
 
   .home-hero__institutional {

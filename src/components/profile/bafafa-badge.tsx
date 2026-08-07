@@ -167,7 +167,10 @@ export function NameWithBadges({
         ))}
       </span>
       {sorted.length > maxBadges && (
-        <span className="shrink-0 rounded-full border border-foreground/15 bg-background px-1.5 py-0.5 text-xs font-black">
+        <span
+          className="badge-overflow-count inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full border-2 px-1.5 text-xs font-black"
+          aria-label={`${sorted.length - maxBadges} selos adicionais`}
+        >
           +{sorted.length - maxBadges}
         </span>
       )}

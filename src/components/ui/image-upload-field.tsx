@@ -85,7 +85,7 @@ export function ImageUploadField({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
+              className="bafafa-touch-target inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground"
             >
               <Upload className="h-4 w-4" /> {previewUrl ? "Trocar imagem" : "Escolher imagem"}
             </button>
@@ -93,7 +93,7 @@ export function ImageUploadField({
               <button
                 type="button"
                 onClick={remove}
-                className="inline-flex items-center gap-2 rounded-full border border-input px-4 py-2 text-sm font-bold text-muted-foreground hover:bg-muted"
+                className="bafafa-touch-target inline-flex items-center gap-2 rounded-full border border-input px-4 py-2 text-sm font-bold text-muted-foreground hover:bg-muted"
               >
                 <Trash2 className="h-4 w-4" /> Remover
               </button>
