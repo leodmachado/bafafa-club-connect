@@ -37,4 +37,13 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  {
+    // Fixtures do Playwright recebem um callback chamado `use`, que a regra de
+    // hooks do React confunde com o hook `use()`. Não há React nos testes de
+    // ponta a ponta, então a regra não se aplica aqui.
+    files: ["e2e/**/*.ts", "playwright.config.ts"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
 );

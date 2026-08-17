@@ -40,3 +40,12 @@ dist-ssr
 .vercel/
 backups/
 *.backup
+
+# npm lockfile — o projeto usa bun.lock
+package-lock.json
+
+# Build e artefatos de teste E2E
+.output
+e2e/.results
+playwright-report
+test-results

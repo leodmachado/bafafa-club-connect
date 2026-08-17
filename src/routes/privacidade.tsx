@@ -96,12 +96,12 @@ function PrivacyPage() {
               <Fact
                 icon={Database}
                 title="Dados essenciais"
-                copy="Cadastro, consentimentos, preferências, presença, interações e segurança."
+                copy="Cadastro e contato, nascimento, cidade, foto, preferências, presença, consumo no bar, interações e segurança."
               />
               <Fact
                 icon={MapPin}
                 title="Localização pontual"
-                copy="Conferida no momento do check-in; suas coordenadas não ficam gravadas."
+                copy="Enviada só para conferir o check-in; suas coordenadas não ficam gravadas."
               />
               <Fact
                 icon={ShieldCheck}
@@ -110,6 +110,19 @@ function PrivacyPage() {
               />
             </div>
             <p>
+              Em detalhe, o Bafafá Connect guarda: nome e sobrenome, nome de usuário, telefone
+              (usado também como WhatsApp), e-mail quando o acesso é por senha, data de nascimento,
+              cidade e bairro, como você conheceu o Bafafá, foto de perfil, bio, suas preferências
+              de evento, bebida e comida, os consentimentos que você marcou, seus check-ins,
+              mensagens da Resenha e conversas privadas, denúncias e bloqueios, e registros de
+              segurança e auditoria. Identidade de gênero e pronomes são opcionais: só existem se
+              você preencher e só aparecem no perfil público se você ligar essa opção. Quando o bar
+              registra seu consumo, guardamos também o histórico de compras e um resumo comercial —
+              número de visitas, valor acumulado, última compra e um marcador de perfil de cliente
+              (por exemplo, “recorrente” ou “sumido da resenha”) — usado para liberar mimos e medir
+              o retorno ao Bafafá.
+            </p>
+            <p>
               Usamos os dados para autenticar sua conta, liberar check-in e Resenha, personalizar a
               experiência, operar Fofoquinhas, prevenir fraude, moderar a comunidade e entender
               ativação e retorno ao Bafafá. Isso ocorre para prestar o serviço, proteger a
@@ -117,10 +130,13 @@ function PrivacyPage() {
               público dependem da sua escolha.
             </p>
             <p>
-              Dados operacionais ficam no Supabase e a aplicação é hospedada na Vercel. Quando o
-              acesso por telefone estiver ativo, a Twilio processará o número e o envio do código de
-              confirmação. Esses fornecedores recebem apenas o necessário para prestar seus
-              serviços. Não vendemos seus dados pessoais.
+              Dados operacionais ficam no Supabase e a aplicação é hospedada na Vercel. A Cloudflare
+              processa a verificação antifraude das telas de cadastro e login, e a Google fornece as
+              fontes do site e, no painel administrativo, a busca de endereços dos locais — em todos
+              esses casos o endereço de IP e dados básicos do navegador chegam a esses fornecedores.
+              Quando o acesso por telefone estiver ativo, a Twilio processará o número e o envio do
+              código de confirmação. Esses fornecedores recebem apenas o necessário para prestar
+              seus serviços e mantêm servidores fora do Brasil. Não vendemos seus dados pessoais.
             </p>
             <p>
               Você pode pedir confirmação de tratamento, acesso, correção, portabilidade quando
@@ -154,7 +170,11 @@ function PrivacyPage() {
             <p className="flex items-start gap-2">
               <MessageCircleMore className="mt-0.5 h-5 w-5 shrink-0 text-samba" /> A Resenha é para
               conversa entre pessoas com presença confirmada. Respeite limites, identidade,
-              orientação, origem, corpo e condição de cada pessoa.
+              orientação, origem, corpo e condição de cada pessoa. A Resenha é um espaço coletivo,
+              não uma conversa privada: a equipe do Bafafá e a moderação podem lê-la para operar e
+              moderar o evento. Ao falar na Resenha, seu nome, seu @, sua foto e seus selos aparecem
+              para as outras pessoas com presença confirmada, mesmo que seu perfil público esteja
+              fechado. Suas conversas privadas seguem regra diferente, descrita abaixo.
             </p>
             <p>
               Conversas privadas só começam quando os dois aceitam um salve. Você pode bloquear uma

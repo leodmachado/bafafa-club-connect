@@ -402,7 +402,10 @@ function ProductsManager({ products, onSaved }: { products: Product[]; onSaved: 
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    // O React zera event.currentTarget quando o handler retorna. Como este
+    // handler tem await, o elemento precisa ser guardado antes.
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const name = String(form.get("name") ?? "").trim();
     if (!name) return;
     setSaving(true);
@@ -432,7 +435,7 @@ function ProductsManager({ products, onSaved }: { products: Product[]; onSaved: 
     if (saveError) return toast.error(publicErrorMessage(saveError));
     toast.success(editing ? "Produto atualizado com histórico." : "Produto criado.");
     setEditing(null);
-    event.currentTarget.reset();
+    formElement.reset();
     onSaved();
   }
 
@@ -803,7 +806,10 @@ function GoalsManager({
   const [saving, setSaving] = useState(false);
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    // O React zera event.currentTarget quando o handler retorna. Como este
+    // handler tem await, o elemento precisa ser guardado antes.
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     setSaving(true);
     const { error } = await supabase.from("collective_goals").insert({
       event_id: String(form.get("event_id")),
@@ -815,7 +821,7 @@ function GoalsManager({
     setSaving(false);
     if (error) return toast.error(publicErrorMessage(error));
     toast.success("Meta coletiva ativada.");
-    event.currentTarget.reset();
+    formElement.reset();
     onSaved();
   }
   return (

@@ -1,0 +1,102 @@
+name: Testes
+
+on:
+  pull_request:
+  push:
+    branches: [main, mvp-checkin-v1]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Project ref inexistente e diferente do de produção. Garante que nenhum job
+  # consiga tocar o banco real; o harness de E2E intercepta tudo.
+  VITE_SUPABASE_URL: https://e2estub.supabase.co
+  VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_e2e_stub
+  SUPABASE_URL: https://e2estub.supabase.co
+  SUPABASE_PUBLISHABLE_KEY: sb_publishable_e2e_stub
+
+jobs:
+  unidade-e-regressao:
+    name: Unidade e regressão
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Baixar o código
+        # `fetch-depth: 0` é obrigatório: a verificação de regressão cria
+        # worktrees nos commits das correções para provar vermelho/verde.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Testes de unidade e regressão
+        run: bun run test
+
+      - name: Provar vermelho antes / verde depois
+        # Confere que cada teste de regressão realmente falha no código
+        # anterior à correção. Um teste que passa nas duas pontas não cobre
+        # nada, e este passo falha se isso acontecer.
+        run: bash scripts/verify-regressions.sh
+
+  ponta-a-ponta:
+    name: Ponta a ponta
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Configurar Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Descobrir a versão do Playwright
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Reaproveitar navegadores em cache
+        id: cache-navegadores
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Instalar o Chromium
+        if: steps.cache-navegadores.outputs.cache-hit != 'true'
+        run: bunx playwright install --with-deps chromium
+
+      - name: Instalar dependências de sistema do navegador
+        if: steps.cache-navegadores.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps chromium
+
+      - name: Testes de ponta a ponta
+        # O próprio Playwright constrói o app (preset node-server do nitro) e
+        # sobe o servidor — ver `webServer` em playwright.config.ts.
+        run: bunx playwright test
+
+      - name: Guardar o relatório em caso de falha
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-playwright
+          path: |
+            playwright-report/
+            e2e/.results/
+          retention-days: 7
+          if-no-files-found: ignore

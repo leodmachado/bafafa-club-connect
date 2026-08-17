@@ -276,7 +276,7 @@ export function AdminPanel({ currentUserId }: { currentUserId: string }) {
       .find(Boolean);
 
     if (firstError) {
-      setError(firstError.message);
+      setError(publicErrorMessage(firstError, "Não foi possível carregar o painel."));
       toast.error("Não foi possível carregar o painel.");
     } else {
       setData({
@@ -1047,12 +1047,21 @@ function EventsManager({
     ]);
     if (checkins.error || campaigns.error) {
       return toast.error(
-        checkins.error?.message ??
-          campaigns.error?.message ??
+        publicErrorMessage(
+          checkins.error ?? campaigns.error,
           "Não foi possível verificar o evento.",
+        ),
       );
     }
-    if ((checkins.count ?? 0) > 0 || (campaigns.count ?? 0) > 0) {
+    // A exclusão é em cascata (chat, avaliações, sessões, metas). Quando a
+    // contagem vem nula não dá para afirmar que o evento está vazio, então o
+    // caminho seguro é apenas cancelar e preservar o histórico.
+    const hasDependents =
+      checkins.count === null ||
+      campaigns.count === null ||
+      checkins.count > 0 ||
+      campaigns.count > 0;
+    if (hasDependents) {
       const { error } = await supabase
         .from("events")
         .update({ status: "cancelled", checkin_enabled: false, chat_enabled: false })

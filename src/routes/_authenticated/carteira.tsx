@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { IdCard, Loader2, LockKeyhole, RefreshCw, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell, ScreenHeader } from "@/components/layout/app-shell";
@@ -36,23 +36,38 @@ function CarteiraDigital() {
 
   useEffect(() => void loadProfile(), [loadProfile]);
 
+  // O controle de "em andamento" fica em ref para que `generate` tenha
+  // identidade estável. Com `generating` na lista de dependências, cada falha
+  // recriava a função, o efeito abaixo disparava de novo e a tela entrava em
+  // um laço infinito de chamadas à RPC.
+  const generatingRef = useRef(false);
+  const autoGenerateTriedRef = useRef(false);
+
   const generate = useCallback(async () => {
-    if (generating) return;
+    if (generatingRef.current) return;
+    generatingRef.current = true;
     setGenerating(true);
-    const { data, error } = await supabase.rpc("create_my_qr_token", {
-      _purpose: "customer",
-      _ref_id: undefined,
-    });
-    setGenerating(false);
-    if (error)
-      return toast.error(publicErrorMessage(error, "Não foi possível gerar sua carteirinha."));
-    const row = data?.[0] ?? null;
-    if (!row?.token) return toast.error("Não foi possível gerar o código. Tente novamente.");
-    setToken(row as TokenResult);
-  }, [generating]);
+    try {
+      const { data, error } = await supabase.rpc("create_my_qr_token", {
+        _purpose: "customer",
+        _ref_id: undefined,
+      });
+      if (error)
+        return toast.error(publicErrorMessage(error, "Não foi possível gerar sua carteirinha."));
+      const row = data?.[0] ?? null;
+      if (!row?.token) return toast.error("Não foi possível gerar o código. Tente novamente.");
+      setToken(row as TokenResult);
+    } finally {
+      generatingRef.current = false;
+      setGenerating(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!loading && !token) void generate();
+    // Uma única tentativa automática. Se falhar, o botão manual assume.
+    if (loading || token || autoGenerateTriedRef.current) return;
+    autoGenerateTriedRef.current = true;
+    void generate();
   }, [generate, loading, token]);
 
   return (

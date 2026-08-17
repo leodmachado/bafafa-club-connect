@@ -333,7 +333,12 @@ function Perfil() {
       ]);
 
       if (profileError || prefsError) {
-        if (uploadedAvatarUrl) await removePublicImage("avatars", uploadedAvatarUrl);
+        // Só apaga a imagem recém-enviada quando o próprio perfil falhou. Se
+        // apenas as preferências falharam, o perfil já aponta para essa URL e
+        // remover o arquivo deixaria o avatar quebrado de forma permanente.
+        if (uploadedAvatarUrl && profileError) {
+          await removePublicImage("avatars", uploadedAvatarUrl);
+        }
         throw profileError ?? prefsError ?? new Error("Não foi possível salvar.");
       }
 

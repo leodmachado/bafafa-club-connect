@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Loader2, Megaphone, RefreshCw, Snowflake } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { publicErrorMessage } from "@/lib/public-error";
 
 export const Route = createFileRoute("/fofocometro/$eventId")({ component: FofocometroScreen });
 
@@ -28,7 +29,10 @@ function FofocometroScreen() {
     const { data, error: loadError } = await supabase.rpc("event_fofocometro", {
       _event_id: eventId,
     });
-    if (loadError) setError(loadError.message);
+    // Esta tela é pública e fica projetada na casa. Nunca exibir a mensagem
+    // técnica crua do Postgres/PostgREST no telão.
+    if (loadError)
+      setError(publicErrorMessage(loadError, "Não foi possível atualizar o Fofocômetro agora."));
     else {
       setGoals(readGoals(data));
       setError(null);

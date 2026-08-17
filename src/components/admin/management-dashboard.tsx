@@ -332,7 +332,10 @@ export function ManagementDashboard({
       _kind: kind,
       _event_id: eventId === "all" ? undefined : eventId,
       _from: fromDate?.toISOString() ?? undefined,
-      _to: toDate.toISOString(),
+      // toDate é fixado na montagem do painel. Numa noite de piloto a tela fica
+      // aberta por horas, então o limite superior da exportação precisa ser o
+      // instante da exportação, senão o arquivo sai truncado sem avisar.
+      _to: new Date().toISOString(),
     });
     setExporting(null);
     if (error) return toast.error(publicErrorMessage(error));
